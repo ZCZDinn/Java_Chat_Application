@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en"
+      xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="jakarta.faces.html"
+      xmlns:f="jakarta.faces.core"
+      xmlns:ui="jakarta.faces.facelets">
+    <h:head>
+        <title>Jakarta Facelets and JNDI DataSources</title>
+    </h:head>
+    <h:body>
+        <!-- TODO: Only render this panel if userLoginBean's token is null -->
+        <h:panelGroup id="login" rendered="#{userLoginBean.token == null}">
+            <h1>Login / Signup</h1>
+            <h:form>
+                <h:outputLabel for="username">
+                    <h:outputText value="Username: "/>
+                </h:outputLabel>
+                <!-- TODO: Set the userName field of the userLoginBean with an inputText. Make it required -->
+                <h:inputText id="username" value="#{userLoginBean.userName}" required="true"/>
+                <h:outputLabel for="password">
+                    <h:outputText value="Password: "/>
+                </h:outputLabel>
+                <!-- TODO: Set the userPassword field of the userLoginBean with an inputSecret. Make it required and set redisplay to false -->
+                <h:inputSecret id="password" value="#{userLoginBean.userPassword}" required="true" redisplay="false"/>
+                <!-- TODO: Create a button with the value "Login" that calls userLoginBean's updateToken method when clicked, executes the form, and renders all -->
+                <h:commandButton value="Login" action="#{userLoginBean.updateToken}">
+                    <f:ajax execute="@form" render="@all"/>
+                </h:commandButton>
+                <!-- TODO: Create a button with the value "Sign-Up" that calls userLoginBean's signup method when clicked, executes the form, and renders all -->
+                <h:commandButton value="Sign-Up" action="#{userLoginBean.signup}">
+                    <f:ajax execute="@form" render="@all"/>
+                </h:commandButton>
+                <h:messages />
+                <h:outputText value="#{userLoginBean.message}" />
+            </h:form>
+        </h:panelGroup>
+        <!-- TODO: Only render this panel if userLoginBean's token is not null -->
+        <h:panelGroup id="server" rendered="#{userLoginBean.token != null}">
+            <h1>Refresh Chat!</h1>
+            <h:form>
+                <!-- TODO: Create a button with the value "Refresh" that calls chatLogBean's pullLog method when clicked, executes the form, and renders chat -->
+                <h:commandButton value="Refresh" action="#{chatLogBean.pullLog}">
+                    <f:ajax execute="@form" render=":chat"/>
+                </h:commandButton>
+                <h:messages />
+            </h:form>
+            <h1>Post a Message!</h1>
+            <h:form>
+                <!-- TODO: Set the messageToPost field of the chatLogBean with an inputText. Make it required -->
+                <h:inputText value="#{chatLogBean.messageToPost}" required="true"/>
+                <!-- TODO: Create a button with the value "Post" that calls chatLogBean's postMessage method when clicked, executes the form, and renders chat -->
+                <h:commandButton value="Post" action="#{chatLogBean.postMessage}">
+                    <f:ajax execute="@form" render=":chat"/>
+                </h:commandButton>
+                <h:messages />
+            </h:form>
+            <h:panelGroup id="chat">
+                <ui:repeat value="#{chatLogBean.chatLog}" var="p">
+                    <p>#{p}</p>
+                </ui:repeat>
+            </h:panelGroup>
+        </h:panelGroup>
+    </h:body>
+</html>
