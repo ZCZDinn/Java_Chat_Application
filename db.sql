@@ -24,7 +24,7 @@ CREATE TABLE IF NOT EXISTS `messages` (
   `userID` int(11) NOT NULL,
   `imageURL` varchar(50),
   `channelID` int(11),
-  `dmID` int(11)
+  `dmID` int(11),
   PRIMARY KEY (`messageID`),
   UNIQUE KEY `message_sentOn_userID` (`message`,`sentOn`,`userID`),
   KEY `messages_users_fk` (`userID`),
@@ -81,7 +81,7 @@ CREATE TABLE IF NOT EXISTS `direct_messages`(
   `user1ID` int(11) NOT NULL,
   `user2ID` int(11) NOT NULL,
   PRIMARY KEY (`dmID`),
-  UNIQUE KEY (`userID1`,`userID2`),
+  UNIQUE KEY (`user1ID`,`user2ID`),
   CONSTRAINT `direct_messages_user1_fk` FOREIGN KEY (`user1ID`) REFERENCES `users` (`userID`),
   CONSTRAINT `direct_messages_user2_fk` FOREIGN KEY (`user2ID`) REFERENCES `users` (`userID`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
