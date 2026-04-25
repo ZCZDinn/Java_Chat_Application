@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en"
+      xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="jakarta.faces.html"
+      xmlns:f="jakarta.faces.core"
+      xmlns:ui="jakarta.faces.facelets">
+    <h:head>
+        <title>Friends</title>
+    </h:head>
+    <h:body>
+
+        <!-- Only show friends page if the user is logged in -->
+        <h:panelGroup rendered="#{userLoginBean.token == null}">
+            <p>You must be logged in to view this page. <h:link value="Go to Login" outcome="chat"/></p>
+        </h:panelGroup>
+
+        <h:panelGroup id="friendsPage" rendered="#{userLoginBean.token != null}">
+            <h1>Friends</h1>
+
+            <!-- ===== Add Friend ===== -->
+            <h2>Add Friend by User ID</h2>
+            <h:form>
+                <h:outputLabel for="addId" value="User ID: "/>
+                <h:inputText id="addId" value="#{friendsBean.friendIdInput}" required="true"/>
+                <h:commandButton value="Send Friend Request" action="#{friendsBean.addFriend}">
+                    <f:ajax execute="@form" render=":friendsPage"/>
+                </h:commandButton>
+                <h:messages/>
+            </h:form>
+
+            <!-- ===== Block User ===== -->
+            <h2>Block User by User ID</h2>
+            <h:form>
+                <h:outputLabel for="blockId" value="User ID: "/>
+                <h:inputText id="blockId" value="#{friendsBean.friendIdInput}" required="true"/>
+                <h:commandButton value="Block User" action="#{friendsBean.blockUser}">
+                    <f:ajax execute="@form" render=":friendsPage"/>
+                </h:commandButton>
+                <h:messages/>
+            </h:form>
+
+            <!-- ===== Status Message ===== -->
+            <h:panelGroup rendered="#{not empty friendsBean.statusMessage}">
+                <p><h:outputText value="#{friendsBean.statusMessage}"/></p>
+            </h:panelGroup>
+
+            <!-- ===== Pending Friend Requests ===== -->
+            <h2>Pending Friend Requests</h2>
+            <h:form>
+                <h:commandButton value="Refresh" action="#{friendsBean.loadPendingRequests}">
+                    <f:ajax execute="@form" render=":friendsPage"/>
+                </h:commandButton>
+            </h:form>
+            <h:panelGroup rendered="#{empty friendsBean.pendingRequests}">
+                <p>No pending friend requests.</p>
+            </h:panelGroup>
+            <ui:repeat value="#{friendsBean.pendingRequests}" var="req">
+                <p>
+                    <h:outputText value="#{req.userName} (ID: #{req.userId}) "/>
+                    <h:form>
+                        <h:commandButton value="Accept" action="#{friendsBean.acceptFriend(req.userId)}">
+                            <f:ajax execute="@form" render=":friendsPage"/>
+                        </h:commandButton>
+                    </h:form>
+                </p>
+            </ui:repeat>
+
+            <!-- ===== Friends List ===== -->
+            <h2>Your Friends</h2>
+            <h:form>
+                <h:commandButton value="Refresh" action="#{friendsBean.loadFriends}">
+                    <f:ajax execute="@form" render=":friendsPage"/>
+                </h:commandButton>
+            </h:form>
+            <h:panelGroup rendered="#{empty friendsBean.friendList}">
+                <p>No friends yet.</p>
+            </h:panelGroup>
+            <ui:repeat value="#{friendsBean.friendList}" var="friend">
+                <p>
+                    <h:outputText value="#{friend.userName} (ID: #{friend.userId}) "/>
+                    <!-- DM button: full navigation to dm.xhtml, no AJAX -->
+                    <h:form>
+                        <h:commandButton value="DM" action="#{directMessagesBean.openDmWith(friend.userId)}"/>
+                    </h:form>
+                </p>
+            </ui:repeat>
+
+        </h:panelGroup>
+
+    </h:body>
+</html>
