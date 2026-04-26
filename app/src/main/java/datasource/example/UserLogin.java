@@ -27,6 +27,7 @@ import jakarta.validation.constraints.Size;
 @Named("userLoginBean")
 @SessionScoped
 public class UserLogin implements Serializable{
+    private static final long serialVersionUID = 1L;
     @NotNull
     private String userName;
     @NotNull
@@ -36,7 +37,7 @@ public class UserLogin implements Serializable{
     private String token;
     private String message;
     private int userId;
-    private Connection conn;
+    private transient Connection conn;
 
     private boolean verifyPassword(byte[] bytes) throws UnsupportedEncodingException{
         return BCrypt.verifyer().verify(userPassword.getBytes("UTF-16"), bytes).verified;
@@ -52,8 +53,8 @@ public class UserLogin implements Serializable{
             token = null;
             // create a new InitialContext
             Context ctx = new InitialContext();
-            // Get the DataSource by lookup with jdbc/Assignment2 under the /comp/env/ in the context
-            DataSource ds = (DataSource) ctx.lookup("java:/comp/env/jdbc/Assignment2");
+            // Get the DataSource by lookup with jdbc/FinalJava under the /comp/env/ in the context
+            DataSource ds = (DataSource) ctx.lookup("java:/comp/env/jdbc/FinalJava");
             // Use getConnection on the datasource to assign the conn field
             conn = ds.getConnection();
         } catch (NamingException | SQLException e) {
@@ -79,7 +80,20 @@ public class UserLogin implements Serializable{
         }     
     }
 
+    private void ensureConnection() {
+        if (conn == null) {
+            try {
+                Context ctx = new InitialContext();
+                DataSource ds = (DataSource) ctx.lookup("java:/comp/env/jdbc/FinalJava");
+                conn = ds.getConnection();
+            } catch (NamingException | SQLException e) {
+                System.out.println(e.getMessage());
+            }
+        }
+    }
+
      public void updateToken() {
+        ensureConnection();
         // In a try-with-resources block
         try (
             // Create the following resource:
@@ -127,6 +141,7 @@ public class UserLogin implements Serializable{
 
 
     public void signup() {
+        ensureConnection();
         // In a try-with-resources resource block
         try (
             // Create the following resource:

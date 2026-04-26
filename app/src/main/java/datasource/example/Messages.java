@@ -26,8 +26,9 @@ import jakarta.inject.Named;
 @Named("chatLogBean")
 @SessionScoped
 public class Messages implements Serializable{
+    private static final long serialVersionUID = 1L;
     private List<String> chatLog = new LinkedList<>();
-    private Connection conn;
+    private transient Connection conn;
     private String messageToPost;
     @Inject private UserLogin login;
 
@@ -38,8 +39,8 @@ public class Messages implements Serializable{
         try {
             // create a new InitialContext
             Context ctx = new InitialContext();
-            // Get the DataSource by lookup with jdbc/Assignment2 under the /comp/env/ in the context
-            DataSource ds = (DataSource)ctx.lookup("java:/comp/env/jdbc/Assignment2");
+            // Get the DataSource by lookup with jdbc/FinalJava under the /comp/env/ in the context
+            DataSource ds = (DataSource)ctx.lookup("java:/comp/env/jdbc/FinalJava");
             // Use getConnection on the datasource to assign the conn field
             this.conn = ds.getConnection();
         // catch Naming and SQL exception's
@@ -66,7 +67,20 @@ public class Messages implements Serializable{
         }           
     }
 
+    private void ensureConnection() {
+        if (this.conn == null) {
+            try {
+                Context ctx = new InitialContext();
+                DataSource ds = (DataSource)ctx.lookup("java:/comp/env/jdbc/FinalJava");
+                this.conn = ds.getConnection();
+            } catch (NamingException | SQLException e) {
+                System.out.println(e.getMessage());
+            }
+        }
+    }
+
     public void pullLog() {
+        ensureConnection();
         // In a try-with-resources resource block
         try (
             // Create the following resources:
@@ -101,6 +115,7 @@ public class Messages implements Serializable{
     }
 
     public void postMessage(){
+        ensureConnection();
         // In a try-with-resources resource block
         try (
             // Create the following resource:
