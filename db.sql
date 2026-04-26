@@ -47,6 +47,7 @@ CREATE TABLE IF NOT EXISTS `servers` (
   `ownerID` int(11) NOT NULL,
   `isPublic` boolean NOT NULL,
   PRIMARY KEY (`serverID`),
+  UNIQUE KEY `server_name` (`name`),
   CONSTRAINT `servers_users_fk` FOREIGN KEY (`ownerID`) REFERENCES `users` (`userID`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
@@ -61,9 +62,9 @@ CREATE TABLE IF NOT EXISTS `server_members` (
 
 CREATE TABLE IF NOT EXISTS `server_invites` (
   `serverID` int(11) NOT NULL,
-  `inviteCode` int(11) NOT NULL AUTO_INCREMENT,
+  `inviteCode` varchar(36) NOT NULL,
   `createdBy` varchar(50),
-  PRIMARY KEY (`inviteCode`), 
+  PRIMARY KEY (`inviteCode`),
   CONSTRAINT `server_invites__server_fk` FOREIGN KEY (`serverID`) REFERENCES `servers` (`serverID`),
   CONSTRAINT `servers_invites_users_fk` FOREIGN KEY (`createdBy`) REFERENCES `users` (`userName`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
