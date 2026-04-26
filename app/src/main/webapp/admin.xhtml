@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en"
+      xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="jakarta.faces.html"
+      xmlns:f="jakarta.faces.core"
+      xmlns:ui="jakarta.faces.facelets">
+    <h:head>
+        <title>Admin Options</title>
+    </h:head>
+    <h:body>
+        <h1>Admin Options</h1>
+        <h:form>
+            <h:outputText value = "userID:"/>
+            <br/>
+            <h:inputText value = "#{serverAdminBean.selectedUserId}"/>
+            <br/><br/>
+            <h:commandButton value = "kick user" action = "#{serverAdminBean.kickUser}"/>
+            <br/>
+            
+            <h:commandButton value="Load Server Members" action="#{serverAdminBean.loadServerMembers}"/>
+
+            <ui:repeat value="#{serverAdminBean.serverMembers}" var="member">
+                <p>#{member}</p>
+            </ui:repeat>
+        </h:form>
+        <br/><br/>
+        <h:form>
+        <h2>Permissions:</h2>
+        <h:outputText value = "userID:"/>
+        <br/>
+        <h:inputText value = "#{serverAdminBean.selectedUserId}"/>
+        <br/>
+        <h:outputText value = "Permission:"/>
+        <br/>
+        <h:inputText value = "#{serverAdminBean.selectedPermission}"/>
+        <br />
+        <h:commandButton value="Grant Permissions" action="#{serverAdminBean.grantPermissions}"/>
+        <h:commandButton value="Revoke Permissions" action="#{serverAdminBean.revokePermissions}"/>
+        </h:form>
+    </h:body>
+    </html>
