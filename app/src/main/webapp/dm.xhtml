@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en"
+      xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="jakarta.faces.html"
+      xmlns:f="jakarta.faces.core"
+      xmlns:ui="jakarta.faces.facelets">
+    <h:head>
+        <title>Direct Message</title>
+    </h:head>
+    <h:body>
+
+        <!-- Only show DM page if the user is logged in -->
+        <h:panelGroup rendered="#{userLoginBean.token == null}">
+            <p>You must be logged in to view this page. <h:link value="Go to Login" outcome="chat"/></p>
+        </h:panelGroup>
+
+        <h:panelGroup id="dmPage" rendered="#{userLoginBean.token != null}">
+
+            <h1>Direct Message</h1>
+
+            <!-- No active conversation yet -->
+            <h:panelGroup rendered="#{directMessagesBean.currentDmId lt 0}">
+                <p>No conversation open. <h:link value="Go to Friends" outcome="friends"/></p>
+            </h:panelGroup>
+
+            <!-- Active DM conversation -->
+            <h:panelGroup rendered="#{directMessagesBean.currentDmId ge 0}">
+
+                <!-- Status / error message -->
+                <h:panelGroup rendered="#{not empty directMessagesBean.statusMessage}">
+                    <p><h:outputText value="#{directMessagesBean.statusMessage}"/></p>
+                </h:panelGroup>
+
+                <!-- Message log -->
+                <h:panelGroup id="dmLog">
+                    <ui:repeat value="#{directMessagesBean.dmLog}" var="entry">
+                        <p>#{entry}</p>
+                    </ui:repeat>
+                </h:panelGroup>
+
+                <!-- Refresh messages -->
+                <h:form>
+                    <h:commandButton value="Refresh" action="#{directMessagesBean.loadMessages}">
+                        <f:ajax execute="@form" render=":dmPage"/>
+                    </h:commandButton>
+                </h:form>
+
+                <!-- Send a message -->
+                <h:form>
+                    <h:outputLabel for="msgInput" value="Message: "/>
+                    <h:inputText id="msgInput" value="#{directMessagesBean.messageText}" required="true"/>
+                    <h:commandButton value="Send" action="#{directMessagesBean.sendMessage}">
+                        <f:ajax execute="@form" render=":dmPage"/>
+                    </h:commandButton>
+                    <h:messages/>
+                </h:form>
+
+                <p><h:link value="Back to Friends" outcome="friends"/></p>
+
+            </h:panelGroup>
+
+        </h:panelGroup>
+
+    </h:body>
+</html>
