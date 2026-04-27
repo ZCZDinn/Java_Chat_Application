@@ -105,11 +105,27 @@ public class RoleManager implements Serializable {
             } else {
                 try (
                     PreparedStatement insertStmt = conn.prepareStatement(
-                    "INSERT INTO roles (serverID, name) VALUES (?,?);");
+                    "INSERT INTO roles (serverID, name) VALUES (?,?);",
+                    PreparedStatement.RETURN_GENERATED_KEYS);
                 ){
                     insertStmt.setInt(1, getCurrentServerId());
                     insertStmt.setString(2, getNewRole());
                     insertStmt.executeUpdate();
+                    
+                    // Get the new role ID and grant it read/write on all channels in this server
+                    try (ResultSet keys = insertStmt.getGeneratedKeys()) {
+                        if (keys.next()) {
+                            int newRoleId = keys.getInt(1);
+                            try (PreparedStatement permStmt = conn.prepareStatement(
+                                "INSERT INTO channel_role_perms (channelID, roleID, canRead, canWrite) " +
+                                "SELECT channelID, ?, true, true FROM channels WHERE serverID = ?")) {
+                                permStmt.setInt(1, newRoleId);
+                                permStmt.setInt(2, getCurrentServerId());
+                                permStmt.executeUpdate();
+                            }
+                        }
+                    }
+                    
                     loadRolesForServer();
                     newRole = "";
                     System.out.println("new role created successfully!");
@@ -144,6 +160,17 @@ public class RoleManager implements Serializable {
                             insertStmt.setInt(1, userID);
                             insertStmt.setInt(2, getCurrentRoleId());
                             insertStmt.executeUpdate();
+                            
+                            // Delete direct member permissions for all channels in this role's server
+                            try(PreparedStatement deletePermsStmt = conn.prepareStatement(
+                                "DELETE FROM channel_member_perms WHERE userID = ? AND channelID IN " +
+                                "(SELECT channelID FROM channels WHERE serverID = (SELECT serverID FROM roles WHERE roleID = ?))"
+                            );) {
+                                deletePermsStmt.setInt(1, getCurrentUserId());
+                                deletePermsStmt.setInt(2, getCurrentRoleId());
+                                deletePermsStmt.executeUpdate();
+                            }
+                            
                             System.out.println("User's role added successfully!");
                         } catch (SQLException e) {
                             e.printStackTrace();
@@ -173,6 +200,18 @@ public class RoleManager implements Serializable {
                     stmt.setInt(2, getCurrentRoleId());
                     int rolesDeleted = stmt.executeUpdate();
                     if(rolesDeleted > 0) {
+                        // Restore default direct member permissions for all channels in this role's server
+                        try(PreparedStatement restorePermsStmt = conn.prepareStatement(
+                            "INSERT INTO channel_member_perms (channelID, userID, canRead, canWrite) " +
+                            "SELECT c.channelID, ?, true, true FROM channels c " +
+                            "WHERE c.serverID = (SELECT serverID FROM roles WHERE roleID = ?) " +
+                            "AND NOT EXISTS (SELECT 1 FROM channel_member_perms cmp WHERE cmp.channelID = c.channelID AND cmp.userID = ?)"
+                        );) {
+                            restorePermsStmt.setInt(1, getCurrentUserId());
+                            restorePermsStmt.setInt(2, getCurrentRoleId());
+                            restorePermsStmt.setInt(3, getCurrentUserId());
+                            restorePermsStmt.executeUpdate();
+                        }
                         System.out.println("User's role deleted successfully!");
                         return;
                     } else {

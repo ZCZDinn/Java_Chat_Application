@@ -77,9 +77,10 @@
                             width="200"/>
 
 
-            <!-- DELETE -->
+            <!-- DELETE (Owner or message author only) -->
             <h:commandButton value="Delete"
-                action="#{channelChatBean.deleteMessage(m.id)}" />
+                action="#{channelChatBean.deleteMessage(m.id)}"
+                rendered="#{channelChatBean.canDeleteMessage(m.authorId)}" />
 
             <hr/>
 

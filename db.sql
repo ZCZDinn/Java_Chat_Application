@@ -116,6 +116,16 @@ CREATE TABLE IF NOT EXISTS `channel_role_perms`(
   CONSTRAINT `channel_role_roleID_fk` FOREIGN KEY (`roleID`) REFERENCES `roles` (`roleID`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+CREATE TABLE IF NOT EXISTS `channel_member_perms`(
+  `channelID` int(11) NOT NULL,
+  `userID` int(11) NOT NULL,
+  `canRead` boolean NOT NULL DEFAULT true,
+  `canWrite` boolean NOT NULL DEFAULT true,
+  PRIMARY KEY(`channelID`, `userID`),
+  CONSTRAINT `channel_member_channelID_fk` FOREIGN KEY (`channelID`) REFERENCES `channels` (`channelID`),
+  CONSTRAINT `channel_member_userID_fk` FOREIGN KEY (`userID`) REFERENCES `users` (`userID`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 CREATE TABLE IF NOT EXISTS `member_permissions`(
   `userID` int(11) NOT NULL,
   `serverID` int(11) NOT NULL,

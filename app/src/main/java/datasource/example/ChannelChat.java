@@ -152,7 +152,7 @@ public class ChannelChat implements Serializable {
         if (currentChannelId < 0) return;
 
         try (PreparedStatement stmt = conn.prepareStatement(
-                "SELECT m.messageID, u.userName, m.message, m.sentOn, m.imageData, m.imageMimeType " +
+                "SELECT m.messageID, m.userID, u.userName, m.message, m.sentOn, m.imageData, m.imageMimeType " +
                 "FROM messages m " +
                 "JOIN users u ON m.userID = u.userID " +
                 "WHERE m.channelID = ? ORDER BY m.sentOn ASC")) {
@@ -164,6 +164,7 @@ public class ChannelChat implements Serializable {
             while (rs.next()) {
                 chatLog.add(new MessageEntry(
                         rs.getInt("messageID"),
+                        rs.getInt("userID"),
                         "[" + rs.getTimestamp("sentOn") + "] "
                                 + rs.getString("userName") + ": "
                                 + rs.getString("message"),
@@ -211,13 +212,25 @@ public class ChannelChat implements Serializable {
 
     public void deleteMessage(int messageId) {
         ensureConnection();
-        try (PreparedStatement stmt = conn.prepareStatement(
-                "DELETE FROM messages WHERE messageID = ? AND userID = ?")) {
-
-            stmt.setInt(1, messageId);
-            stmt.setInt(2, login.getUserId());
-            stmt.executeUpdate();
-
+        
+        // Owner can delete any message, others can only delete their own
+        try {
+            if (isServerOwner()) {
+                // Owner can delete any message
+                try (PreparedStatement stmt = conn.prepareStatement(
+                        "DELETE FROM messages WHERE messageID = ?")) {
+                    stmt.setInt(1, messageId);
+                    stmt.executeUpdate();
+                }
+            } else {
+                // Non-owner can only delete their own messages
+                try (PreparedStatement stmt = conn.prepareStatement(
+                        "DELETE FROM messages WHERE messageID = ? AND userID = ?")) {
+                    stmt.setInt(1, messageId);
+                    stmt.setInt(2, login.getUserId());
+                    stmt.executeUpdate();
+                }
+            }
         } catch (SQLException e) {
             statusMessage = e.getMessage();
         }
@@ -230,6 +243,22 @@ public class ChannelChat implements Serializable {
     // ----------------------------
     public boolean canWrite() {
         ensureConnection();
+        
+        // Owner always has write access
+        if (isServerOwner()) return true;
+        
+        // Check direct member permissions
+        try (PreparedStatement stmt = conn.prepareStatement(
+                "SELECT canWrite FROM channel_member_perms WHERE channelID = ? AND userID = ?")) {
+            stmt.setInt(1, currentChannelId);
+            stmt.setInt(2, login.getUserId());
+            ResultSet rs = stmt.executeQuery();
+            if (rs.next()) return rs.getBoolean("canWrite");
+        } catch (SQLException e) {
+            statusMessage = e.getMessage();
+        }
+        
+        // Check role-based permissions
         try (PreparedStatement stmt = conn.prepareStatement(
                 "SELECT crp.canWrite " +
                 "FROM user_roles ur " +
@@ -255,6 +284,22 @@ public class ChannelChat implements Serializable {
 
     public boolean canRead() {
         ensureConnection();
+        
+        // Owner always has read access
+        if (isServerOwner()) return true;
+        
+        // Check direct member permissions
+        try (PreparedStatement stmt = conn.prepareStatement(
+                "SELECT canRead FROM channel_member_perms WHERE channelID = ? AND userID = ?")) {
+            stmt.setInt(1, currentChannelId);
+            stmt.setInt(2, login.getUserId());
+            ResultSet rs = stmt.executeQuery();
+            if (rs.next()) return rs.getBoolean("canRead");
+        } catch (SQLException e) {
+            statusMessage = e.getMessage();
+        }
+        
+        // Check role-based permissions
         try (PreparedStatement stmt = conn.prepareStatement(
                 "SELECT crp.canRead " +
                 "FROM user_roles ur " +
@@ -284,18 +329,21 @@ public class ChannelChat implements Serializable {
     public static class MessageEntry implements Serializable {
         private static final long serialVersionUID = 1L;
         public int id;
+        public int authorId;
         public String text;
         public byte[] imageData;
         public String imageMimeType;
 
-        public MessageEntry(int id, String text, byte[] imageData, String imageMimeType) {
+        public MessageEntry(int id, int authorId, String text, byte[] imageData, String imageMimeType) {
             this.id = id;
+            this.authorId = authorId;
             this.text = text;
             this.imageData = imageData;
             this.imageMimeType = imageMimeType;
         }
 
         public int getId() { return id; }
+        public int getAuthorId() { return authorId; }
         public String getText() { return text; }
         public byte[] getImageData() { return imageData; }
         public String getImageMimeType() { return imageMimeType; }
@@ -324,14 +372,24 @@ public class ChannelChat implements Serializable {
                 newChannelId = rs.getInt(1);
             }
 
-            // Grant read/write permissions to all roles in this server
+            // Grant permissions
             if (newChannelId > 0) {
+                // 1. Grant role-based permissions to all roles
                 try (PreparedStatement permStmt = conn.prepareStatement(
                         "INSERT INTO channel_role_perms (channelID, roleID, canRead, canWrite) " +
                         "SELECT ?, roleID, true, true FROM roles WHERE serverID = ?")) {
                     permStmt.setInt(1, newChannelId);
                     permStmt.setInt(2, currentContext.getCurrentServerID());
                     permStmt.executeUpdate();
+                }
+                
+                // 2. Grant direct permissions to all members in the server
+                try (PreparedStatement memberStmt = conn.prepareStatement(
+                        "INSERT INTO channel_member_perms (channelID, userID, canRead, canWrite) " +
+                        "SELECT ?, userID, true, true FROM server_members WHERE serverID = ?")) {
+                    memberStmt.setInt(1, newChannelId);
+                    memberStmt.setInt(2, currentContext.getCurrentServerID());
+                    memberStmt.executeUpdate();
                 }
             }
 
@@ -417,4 +475,11 @@ public class ChannelChat implements Serializable {
     public List<String> getRoleNames() { return roleNames; }
     public List<Boolean> getRoleCanRead() { return roleCanRead; }
     public List<Boolean> getRoleCanWrite() { return roleCanWrite; }
+    public boolean getServerOwner() { 
+        return isServerOwner();
+    }
+
+    public boolean canDeleteMessage(int authorId) {
+        return isServerOwner() || login.getUserId() == authorId;
+    }
 }
