@@ -8,10 +8,11 @@
         <title>Direct Message</title>
     </h:head>
     <h:body>
+        <ui:include src="navbar.xhtml"/>
 
         <!-- Only show DM page if the user is logged in -->
         <h:panelGroup rendered="#{userLoginBean.token == null}">
-            <p>You must be logged in to view this page. <h:link value="Go to Login" outcome="chat"/></p>
+            <p>You must be logged in to view this page. <h:link value="Go to Login" outcome="login"/></p>
         </h:panelGroup>
 
         <h:panelGroup id="dmPage" rendered="#{userLoginBean.token != null}">
