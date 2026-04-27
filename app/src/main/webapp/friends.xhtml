@@ -17,6 +17,33 @@
         <h:panelGroup id="friendsPage" rendered="#{userLoginBean.token != null}">
             <h1>Friends</h1>
 
+            <!-- ===== DM User by ID (req #18) ===== -->
+            <h2>Direct Message by User ID</h2>
+            <h:form>
+                <h:outputLabel for="dmById" value="User ID: "/>
+                <h:inputText id="dmById" value="#{directMessagesBean.dmTargetIdInput}" required="true"/>
+                <h:commandButton value="Open DM" action="#{directMessagesBean.openDmByInput}"/>
+                <h:messages/>
+            </h:form>
+
+            <!-- ===== Send Server Invite via DM (req #5/#6) ===== -->
+            <h2>Send Server Invite via DM</h2>
+            <h:form>
+                <h:outputLabel for="inviteUserId" value="User ID: "/>
+                <h:inputText id="inviteUserId" value="#{directMessagesBean.inviteTargetIdInput}" required="true"/>
+                <br/>
+                <h:outputLabel for="inviteServer" value="Server Name (optional): "/>
+                <h:inputText id="inviteServer" value="#{directMessagesBean.inviteServerName}"/>
+                <br/>
+                <h:outputLabel for="inviteCode" value="Invite Code: "/>
+                <h:inputText id="inviteCode" value="#{directMessagesBean.inviteCodeToSend}" required="true"/>
+                <br/>
+                <h:commandButton value="Send Invite" action="#{directMessagesBean.sendInviteDm}">
+                    <f:ajax execute="@form" render=":friendsPage"/>
+                </h:commandButton>
+                <h:messages/>
+            </h:form>
+
             <!-- ===== Add Friend ===== -->
             <h2>Add Friend by User ID</h2>
             <h:form>

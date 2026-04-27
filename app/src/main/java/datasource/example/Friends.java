@@ -23,7 +23,7 @@ import jakarta.inject.Named;
 @SessionScoped
 public class Friends implements Serializable {
 
-    // Inner class used to hold a friend's ID and username for display in XHTML
+    // Represents one friend in the friends list (their ID and display name)
     public static class FriendEntry implements Serializable {
         private int userId;
         private String userName;
@@ -66,7 +66,7 @@ public class Friends implements Serializable {
         }
     }
 
-    // Loads all accepted friends into friendList
+    // Fetches the current user's accepted friends from the database and stores them for display
     public void loadFriends() {
         friendList.clear();
         try (
@@ -86,7 +86,7 @@ public class Friends implements Serializable {
         }
     }
 
-    // Loads all incoming pending friend requests into pendingRequests
+    // Fetches any friend requests other users have sent to the current user that haven't been accepted yet
     public void loadPendingRequests() {
         pendingRequests.clear();
         try (
@@ -106,8 +106,8 @@ public class Friends implements Serializable {
         }
     }
 
-    // Sends a friend request to the user with ID friendIdInput.
-    // If that user already sent us a request, auto-accept instead.
+    // Sends a friend request to another user by ID.
+    // If that user already sent you a request, it automatically becomes accepted for both sides.
     public void addFriend() {
         int me = login.getUserId();
         if (friendIdInput == me) {
@@ -115,14 +115,13 @@ public class Friends implements Serializable {
             return;
         }
         try {
-            // Check if the target has already sent me a pending request
             try (PreparedStatement check = conn.prepareStatement(
                     "SELECT status FROM friends WHERE userID = ? AND friendID = ?")) {
                 check.setInt(1, friendIdInput);
                 check.setInt(2, me);
                 try (ResultSet rs = check.executeQuery()) {
                     if (rs.next() && "pending".equals(rs.getString(1))) {
-                        // Auto-accept: update their row and insert our acceptance row
+                        // The other user already sent a request, so just accept it for both
                         try (PreparedStatement upd = conn.prepareStatement(
                                 "UPDATE friends SET status = 'accepted' WHERE userID = ? AND friendID = ?")) {
                             upd.setInt(1, friendIdInput);
@@ -142,7 +141,7 @@ public class Friends implements Serializable {
                     }
                 }
             }
-            // Otherwise send a new friend request (ignore if already pending, don't overwrite a block)
+            // If this user was previously blocked, the block stays — a friend request won't undo it
             try (PreparedStatement stmt = conn.prepareStatement(
                     "INSERT INTO friends (userID, friendID, status) VALUES (?, ?, 'pending') " +
                     "ON DUPLICATE KEY UPDATE status = IF(status = 'blocked', status, 'pending')")) {
@@ -156,7 +155,7 @@ public class Friends implements Serializable {
         }
     }
 
-    // Blocks the user with ID friendIdInput
+    // Blocks a user by ID. They are also removed from that user's friend list so they can no longer see you.
     public void blockUser() {
         int me = login.getUserId();
         try (PreparedStatement stmt = conn.prepareStatement(
@@ -165,15 +164,26 @@ public class Friends implements Serializable {
             stmt.setInt(1, me);
             stmt.setInt(2, friendIdInput);
             stmt.executeUpdate();
-            statusMessage = "User " + friendIdInput + " has been blocked.";
-            loadFriends();
-            loadPendingRequests();
         } catch (SQLException e) {
             statusMessage = e.getMessage();
+            return;
         }
+        // Remove us from the blocked user's friend list so they can't see us either
+        try (PreparedStatement del = conn.prepareStatement(
+                "DELETE FROM friends WHERE userID = ? AND friendID = ?")) {
+            del.setInt(1, friendIdInput);
+            del.setInt(2, me);
+            del.executeUpdate();
+        } catch (SQLException e) {
+            statusMessage = e.getMessage();
+            return;
+        }
+        statusMessage = "User " + friendIdInput + " has been blocked.";
+        loadFriends();
+        loadPendingRequests();
     }
 
-    // Accepts an incoming friend request from the given requesterId
+    // Accepts a pending friend request from another user, making the friendship mutual in the database
     public void acceptFriend(int requesterId) {
         int me = login.getUserId();
         try {
