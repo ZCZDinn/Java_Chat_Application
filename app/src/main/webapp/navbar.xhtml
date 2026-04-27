@@ -1,0 +1,15 @@
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:h="jakarta.faces.html"
+                xmlns:ui="jakarta.faces.facelets">
+    <!-- Navigation bar — only shown when a user is logged in -->
+    <h:panelGroup rendered="#{userLoginBean.token != null}">
+        <nav>
+            <h:graphicImage library="images" name="logo.png" alt="Logo" style="height: 32px; vertical-align: middle;"/>
+            <h:link value="My Servers" outcome="servers"/> |
+            <h:link value="Browse Servers" outcome="server-browser"/> |
+            <h:link value="Friends" outcome="friends"/>
+            <span style="float: right;">Logged in as: <b><h:outputText value="#{userLoginBean.userName}"/></b></span>
+        </nav>
+        <hr/>
+    </h:panelGroup>
+</ui:composition>
