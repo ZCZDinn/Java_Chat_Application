@@ -172,6 +172,7 @@ public class RoleManager implements Serializable {
                             }
                             
                             System.out.println("User's role added successfully!");
+                            statusMessage = "User's role added successfully!";
                         } catch (SQLException e) {
                             e.printStackTrace();
                         }
@@ -213,6 +214,7 @@ public class RoleManager implements Serializable {
                             restorePermsStmt.executeUpdate();
                         }
                         System.out.println("User's role deleted successfully!");
+                        statusMessage = "User's role deleted successfully!";
                         return;
                     } else {
                         System.out.println("User had never been assigned that role.");
