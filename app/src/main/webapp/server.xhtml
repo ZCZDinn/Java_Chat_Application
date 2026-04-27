@@ -8,6 +8,7 @@
         <title>Server</title>
     </h:head>
     <h:body>
+        <ui:include src="navbar.xhtml"/>
         <h:panelGroup rendered="#{userLoginBean.token == null}">
             <p>You must be logged in. <h:link value="Go to Login" outcome="login"/></p>
         </h:panelGroup>
