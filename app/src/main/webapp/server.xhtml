@@ -69,6 +69,33 @@
 
             <p><h:link value="Back to My Servers" outcome="servers"/></p>
             <p><h:link value="Go to Channels" outcome="channel"/></p>
+            <h:panelGroup rendered="#{serverViewBean.ownerID == userLoginBean.userId}">
+                <p><h:link value="Go to Admin (Owner) Options" outcome="admin"/></p>
+                <p><h:link value="Go to Roles Page" outcome="roles"/></p>
+                
+                <h2>Appoint New Owner</h2>
+                <h:form>
+                    <h:selectOneMenu value="#{serverViewBean.appointOwnerId}"
+                                    disabled="#{empty serverViewBean.nonOwnerMembers}">
+                        <f:selectItem itemValue="#{-1}" itemLabel="-- Select a member --"/>
+                        <f:selectItems value="#{serverViewBean.nonOwnerMembers}" var="m"
+                                    itemValue="#{m.userId}" itemLabel="#{m.userName}"/>
+                    </h:selectOneMenu>
+                    <h:commandButton value="Appoint New Owner"
+                                    action="#{serverViewBean.appointNewOwner}"
+                                    disabled="#{empty serverViewBean.nonOwnerMembers}">
+                        <f:ajax execute="@form" render=":serverPage"/>
+                    </h:commandButton>
+                    <h:panelGroup rendered="#{not empty serverViewBean.appointMessage}">
+                        <p><h:outputText value="#{serverViewBean.appointMessage}"/></p>
+                    </h:panelGroup>
+                </h:form>
+            </h:panelGroup>
+
+            <!-- Leave Server — not shown to the owner -->
+            <h:form rendered="#{serverViewBean.ownerID != userLoginBean.userId}">
+                <h:commandButton value="Leave Server" action="#{serverViewBean.leaveServer}"/>
+            </h:form>
         </h:panelGroup>
     </h:body>
 </html>
