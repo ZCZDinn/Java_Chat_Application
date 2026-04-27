@@ -10,6 +10,10 @@
 
 <h:body>
 <ui:include src="navbar.xhtml"/>
+<h:panelGroup rendered="#{userLoginBean.token == null}">
+    <p>You must be logged in. <h:link value="Go to Login" outcome="login"/></p>
+</h:panelGroup>
+<h:panelGroup id="channelPage" rendered="#{userLoginBean.token != null}">
 
 <f:view>
     <f:event type="preRenderView" listener="#{channelChatBean.loadChannels}"/>
@@ -138,5 +142,6 @@
 </h:panelGroup>
 
 </f:view>
+</h:panelGroup>
 </h:body>
 </html>

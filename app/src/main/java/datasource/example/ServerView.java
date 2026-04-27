@@ -42,6 +42,8 @@ public class ServerView implements Serializable {
         }
     }
 
+    private int appointOwnerId = -1;
+    private String appointMessage = ""; 
     private int currentServerId = -1;
     private String currentServerName = "";
     private boolean currentServerPublic;
@@ -162,6 +164,53 @@ public class ServerView implements Serializable {
         }
     }
 
+    public String leaveServer() {
+        if (currentServerId < 0) return "servers?faces-redirect=true";
+        try (PreparedStatement stmt = conn.prepareStatement(
+                "DELETE FROM server_members WHERE serverID = ? AND userID = ?")) {
+            stmt.setInt(1, currentServerId);
+            stmt.setInt(2, login.getUserId());
+            stmt.executeUpdate();
+        } catch (SQLException e) {
+            statusMessage = e.getMessage();
+            return null;
+        }
+        currentServerId = -1;
+        return "servers?faces-redirect=true";
+    }
+
+    public List<MemberEntry> getNonOwnerMembers() {
+        List<MemberEntry> result = new LinkedList<>();
+        for (MemberEntry m : members) {
+            if (m.getUserId() != ownerID) result.add(m);
+        }
+        return result;
+    }
+
+    public void appointNewOwner() {
+        if (appointOwnerId == -1) {
+            appointMessage = "Please select a member.";
+            return;
+        }
+        if (currentServerId < 0 || login.getUserId() != ownerID) return;
+        try (PreparedStatement stmt = conn.prepareStatement(
+                "UPDATE servers SET ownerID = ? WHERE serverID = ?")) {
+            stmt.setInt(1, appointOwnerId);
+            stmt.setInt(2, currentServerId);
+            stmt.executeUpdate();
+            ownerID = appointOwnerId;
+            appointOwnerId = -1;
+            appointMessage = "";
+            loadMembers();
+            loadInviteCode();
+        } catch (SQLException e) {
+            appointMessage = e.getMessage();
+        }
+    }
+
+    public int getAppointOwnerId() { return appointOwnerId; }
+    public void setAppointOwnerId(int appointOwnerId) { this.appointOwnerId = appointOwnerId; }
+    public String getAppointMessage() { return appointMessage; }
     public int getCurrentServerId() { return currentServerId; }
     public String getCurrentServerName() { return currentServerName; }
     public boolean isCurrentServerPublic() { return currentServerPublic; }
