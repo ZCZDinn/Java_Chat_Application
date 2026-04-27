@@ -29,6 +29,10 @@ public class DirectMessages implements Serializable {
     private String statusMessage = "";
     private List<String> dmLog = new LinkedList<>();
     private int currentDmId = -1;
+    private int dmTargetIdInput;
+    private int inviteTargetIdInput;
+    private String inviteServerName = "";
+    private String inviteCodeToSend = "";
     private Connection conn;
     @Inject private UserLogin login;
 
@@ -54,12 +58,10 @@ public class DirectMessages implements Serializable {
         }
     }
 
-    // Opens (or creates) a DM conversation with the given user.
-    // Checks for a block relationship first; navigates to dm.xhtml on success.
-    public String openDmWith(int targetId) {
+    // Looks up an existing private conversation with the target user, or creates one if it doesn't exist yet.
+    // Returns -1 if messaging is blocked or something goes wrong.
+    private int getOrCreateDm(int targetId) {
         int me = login.getUserId();
-
-        // Check if either user has blocked the other
         try (PreparedStatement blockCheck = conn.prepareStatement(
                 "SELECT 1 FROM friends " +
                 "WHERE ((userID = ? AND friendID = ?) OR (userID = ? AND friendID = ?)) " +
@@ -70,54 +72,60 @@ public class DirectMessages implements Serializable {
             blockCheck.setInt(4, me);
             try (ResultSet rs = blockCheck.executeQuery()) {
                 if (rs.next()) {
-                    statusMessage = "Cannot open DM: one of the users has blocked the other.";
-                    return null;
+                    statusMessage = "Cannot message this user: a block exists between you.";
+                    return -1;
                 }
             }
         } catch (SQLException e) {
             statusMessage = e.getMessage();
-            return null;
+            return -1;
         }
 
-        // Ensure the lower ID is always user1ID so each pair has exactly one row
+        // Store the lower user ID first so there's only ever one conversation record per pair of users
         int user1 = Math.min(me, targetId);
         int user2 = Math.max(me, targetId);
 
         try {
-            // Try to find an existing DM conversation between these two users
             try (PreparedStatement find = conn.prepareStatement(
                     "SELECT dmID FROM direct_messages WHERE user1ID = ? AND user2ID = ?")) {
                 find.setInt(1, user1);
                 find.setInt(2, user2);
                 try (ResultSet rs = find.executeQuery()) {
-                    if (rs.next()) {
-                        currentDmId = rs.getInt(1);
-                    } else {
-                        // No conversation exists yet — create one
-                        try (PreparedStatement ins = conn.prepareStatement(
-                                "INSERT INTO direct_messages (user1ID, user2ID) VALUES (?, ?)",
-                                PreparedStatement.RETURN_GENERATED_KEYS)) {
-                            ins.setInt(1, user1);
-                            ins.setInt(2, user2);
-                            ins.executeUpdate();
-                            try (ResultSet keys = ins.getGeneratedKeys()) {
-                                if (keys.next()) {
-                                    currentDmId = keys.getInt(1);
-                                }
-                            }
-                        }
-                    }
+                    if (rs.next()) return rs.getInt(1);
                 }
             }
-            loadMessages();
-            return "dm";
+            // No existing conversation found, so create a new one
+            try (PreparedStatement ins = conn.prepareStatement(
+                    "INSERT INTO direct_messages (user1ID, user2ID) VALUES (?, ?)",
+                    PreparedStatement.RETURN_GENERATED_KEYS)) {
+                ins.setInt(1, user1);
+                ins.setInt(2, user2);
+                ins.executeUpdate();
+                try (ResultSet keys = ins.getGeneratedKeys()) {
+                    if (keys.next()) return keys.getInt(1);
+                }
+            }
         } catch (SQLException e) {
             statusMessage = e.getMessage();
-            return null;
         }
+        return -1;
     }
 
-    // Loads all messages for the current DM conversation into dmLog
+    // Opens a direct message conversation with the user ID entered in the DM input field on the friends page
+    public String openDmByInput() {
+        return openDmWith(dmTargetIdInput);
+    }
+
+    // Opens a direct message conversation with a specific user (used from the friends list DM button)
+    public String openDmWith(int targetId) {
+        int dmId = getOrCreateDm(targetId);
+        if (dmId < 0) return null;
+        currentDmId = dmId;
+        loadMessages();
+        return "dm";
+    }
+
+    // Loads all messages from the current conversation so they can be displayed on the DM page
     public void loadMessages() {
         dmLog.clear();
         if (currentDmId < 0) return;
@@ -136,7 +144,7 @@ public class DirectMessages implements Serializable {
         }
     }
 
-    // Sends a message in the current DM conversation
+    // Sends the typed message to the other person in the current conversation and refreshes the chat
     public void sendMessage() {
         if (currentDmId < 0 || messageText == null || messageText.isBlank()) return;
         try (PreparedStatement stmt = conn.prepareStatement(
@@ -153,9 +161,44 @@ public class DirectMessages implements Serializable {
         }
     }
 
+    // Sends a private server invite to another user as a DM message containing the invite code
+    public void sendInviteDm() {
+        if (inviteCodeToSend == null || inviteCodeToSend.isBlank()) {
+            statusMessage = "Please enter an invite code.";
+            return;
+        }
+        int dmId = getOrCreateDm(inviteTargetIdInput);
+        if (dmId < 0) return;
+        String serverLabel = (inviteServerName != null && !inviteServerName.isBlank())
+                ? "\"" + inviteServerName + "\""
+                : "a private server";
+        String msg = "You've been invited to join " + serverLabel + "! Invite code: " + inviteCodeToSend;
+        try (PreparedStatement stmt = conn.prepareStatement(
+                "INSERT INTO messages (message, sentOn, userID, dmID) VALUES (?, ?, ?, ?)")) {
+            stmt.setString(1, msg);
+            stmt.setTimestamp(2, Timestamp.from(Instant.now()));
+            stmt.setInt(3, login.getUserId());
+            stmt.setInt(4, dmId);
+            stmt.executeUpdate();
+            statusMessage = "Invite sent!";
+            inviteCodeToSend = "";
+            inviteServerName = "";
+        } catch (SQLException e) {
+            statusMessage = e.getMessage();
+        }
+    }
+
     public String getMessageText() { return messageText; }
     public void setMessageText(String messageText) { this.messageText = messageText; }
     public String getStatusMessage() { return statusMessage; }
     public List<String> getDmLog() { return dmLog; }
     public int getCurrentDmId() { return currentDmId; }
+    public int getDmTargetIdInput() { return dmTargetIdInput; }
+    public void setDmTargetIdInput(int dmTargetIdInput) { this.dmTargetIdInput = dmTargetIdInput; }
+    public int getInviteTargetIdInput() { return inviteTargetIdInput; }
+    public void setInviteTargetIdInput(int inviteTargetIdInput) { this.inviteTargetIdInput = inviteTargetIdInput; }
+    public String getInviteServerName() { return inviteServerName; }
+    public void setInviteServerName(String inviteServerName) { this.inviteServerName = inviteServerName; }
+    public String getInviteCodeToSend() { return inviteCodeToSend; }
+    public void setInviteCodeToSend(String inviteCodeToSend) { this.inviteCodeToSend = inviteCodeToSend; }
 }
