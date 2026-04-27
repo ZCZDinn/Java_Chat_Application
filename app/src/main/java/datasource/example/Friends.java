@@ -23,8 +23,11 @@ import jakarta.inject.Named;
 @SessionScoped
 public class Friends implements Serializable {
 
+    private static final long serialVersionUID = 1L;
+
     // Inner class used to hold a friend's ID and username for display in XHTML
     public static class FriendEntry implements Serializable {
+        private static final long serialVersionUID = 1L;
         private int userId;
         private String userName;
 
@@ -41,7 +44,7 @@ public class Friends implements Serializable {
     private String statusMessage = "";
     private List<FriendEntry> friendList = new LinkedList<>();
     private List<FriendEntry> pendingRequests = new LinkedList<>();
-    private Connection conn;
+    private transient Connection conn;
     @Inject private UserLogin login;
 
     @PostConstruct
@@ -66,8 +69,21 @@ public class Friends implements Serializable {
         }
     }
 
+    private void ensureConnection() {
+        if (conn == null) {
+            try {
+                Context ctx = new InitialContext();
+                DataSource ds = (DataSource) ctx.lookup("java:/comp/env/jdbc/FinalJava");
+                conn = ds.getConnection();
+            } catch (NamingException | SQLException e) {
+                System.out.println(e.getMessage());
+            }
+        }
+    }
+
     // Loads all accepted friends into friendList
     public void loadFriends() {
+        ensureConnection();
         friendList.clear();
         try (
             PreparedStatement stmt = conn.prepareStatement(
@@ -88,6 +104,7 @@ public class Friends implements Serializable {
 
     // Loads all incoming pending friend requests into pendingRequests
     public void loadPendingRequests() {
+        ensureConnection();
         pendingRequests.clear();
         try (
             PreparedStatement stmt = conn.prepareStatement(
@@ -109,6 +126,7 @@ public class Friends implements Serializable {
     // Sends a friend request to the user with ID friendIdInput.
     // If that user already sent us a request, auto-accept instead.
     public void addFriend() {
+        ensureConnection();
         int me = login.getUserId();
         if (friendIdInput == me) {
             statusMessage = "You cannot add yourself as a friend.";
@@ -158,6 +176,7 @@ public class Friends implements Serializable {
 
     // Blocks the user with ID friendIdInput
     public void blockUser() {
+        ensureConnection();
         int me = login.getUserId();
         try (PreparedStatement stmt = conn.prepareStatement(
                 "INSERT INTO friends (userID, friendID, status) VALUES (?, ?, 'blocked') " +
@@ -175,6 +194,7 @@ public class Friends implements Serializable {
 
     // Accepts an incoming friend request from the given requesterId
     public void acceptFriend(int requesterId) {
+        ensureConnection();
         int me = login.getUserId();
         try {
             try (PreparedStatement upd = conn.prepareStatement(
