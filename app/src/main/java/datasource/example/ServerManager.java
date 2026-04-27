@@ -91,7 +91,7 @@ public class ServerManager implements Serializable {
 
     // Req #1, #2 — Creates a public or private server. Owner is auto-joined.
     // For private servers, an invite code is auto-generated (UUID).
-    public void createServer() {
+    public String createServer() {
         ensureConnection();
         int me = login.getUserId();
         lastGeneratedInviteCode = null;
@@ -103,12 +103,12 @@ public class ServerManager implements Serializable {
             try (ResultSet rs = nameCheck.executeQuery()) {
                 if (rs.next()) {
                     statusMessage = "A server named \"" + serverName + "\" already exists. Please choose a different name.";
-                    return;
+                    return null;
                 }
             }
         } catch (SQLException e) {
             statusMessage = e.getMessage();
-            return;
+            return null;
         }
         
         try (PreparedStatement ins = conn.prepareStatement(
@@ -122,7 +122,7 @@ public class ServerManager implements Serializable {
             try (ResultSet keys = ins.getGeneratedKeys()) {
                 if (!keys.next()) {
                     statusMessage = "Failed to create server.";
-                    return;
+                    return null;
                 }
                 newServerId = keys.getInt(1);
             }
@@ -133,6 +133,16 @@ public class ServerManager implements Serializable {
                 join.setInt(2, me);
                 join.executeUpdate();
             }
+            
+            // Add owner permissions to all channels (none yet, but good for consistency)
+            try (PreparedStatement memberPerms = conn.prepareStatement(
+                    "INSERT INTO channel_member_perms (channelID, userID, canRead, canWrite) " +
+                    "SELECT channelID, ?, true, true FROM channels WHERE serverID = ?")) {
+                memberPerms.setInt(1, me);
+                memberPerms.setInt(2, newServerId);
+                memberPerms.executeUpdate();
+            }
+            
             // For private servers, insert a row into server_invites.
             // An invite code is automatically generated.
            if (!publicServer) {
@@ -150,8 +160,13 @@ public class ServerManager implements Serializable {
                 statusMessage = "Public server \"" + serverName + "\" created!";
             }
             loadMyServers();
+            
+            // Set context and navigate to server
+            currentContext.setCurrentServerID(newServerId);
+            return serverView.loadServer(newServerId);
         } catch (SQLException e) {
             statusMessage = e.getMessage();
+            return null;
         }
     }
 
@@ -230,6 +245,16 @@ public class ServerManager implements Serializable {
                 join.setInt(2, me);
                 join.executeUpdate();
             }
+            
+            // Add member permissions to all channels in this server
+            try (PreparedStatement memberPerms = conn.prepareStatement(
+                    "INSERT INTO channel_member_perms (channelID, userID, canRead, canWrite) " +
+                    "SELECT channelID, ?, true, true FROM channels WHERE serverID = ?")) {
+                memberPerms.setInt(1, me);
+                memberPerms.setInt(2, serverId);
+                memberPerms.executeUpdate();
+            }
+            
             loadMyServers();
             return serverView.loadServer(serverId);
         } catch (SQLException e) {
@@ -272,6 +297,16 @@ public class ServerManager implements Serializable {
                 join.setInt(2, me);
                 join.executeUpdate();
             }
+            
+            // Add member permissions to all channels in this server
+            try (PreparedStatement memberPerms = conn.prepareStatement(
+                    "INSERT INTO channel_member_perms (channelID, userID, canRead, canWrite) " +
+                    "SELECT channelID, ?, true, true FROM channels WHERE serverID = ?")) {
+                memberPerms.setInt(1, me);
+                memberPerms.setInt(2, serverId);
+                memberPerms.executeUpdate();
+            }
+            
             loadMyServers();
             return serverView.loadServer(serverId);
         } catch (SQLException e) {

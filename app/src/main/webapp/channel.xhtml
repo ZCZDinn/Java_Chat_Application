@@ -9,10 +9,7 @@
 </h:head>
 
 <h:body>
-<h:panelGroup rendered="#{userLoginBean.token == null}">
-    <p>You must be logged in. <h:link value="Go to Login" outcome="login"/></p>
-</h:panelGroup>
-<h:panelGroup id="browserPage" rendered="#{userLoginBean.token != null}">
+<ui:include src="navbar.xhtml"/>
 
 <f:view>
     <f:event type="preRenderView" listener="#{channelChatBean.loadChannels}"/>
@@ -81,9 +78,10 @@
                             width="200"/>
 
 
-            <!-- DELETE -->
+            <!-- DELETE (Owner or message author only) -->
             <h:commandButton value="Delete"
-                action="#{channelChatBean.deleteMessage(m.id)}" />
+                action="#{channelChatBean.deleteMessage(m.id)}"
+                rendered="#{channelChatBean.canDeleteMessage(m.authorId)}" />
 
             <hr/>
 

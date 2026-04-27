@@ -8,45 +8,48 @@
         <title>Admin Options</title>
     </h:head>
     <h:body>
-        <h:panelGroup rendered="#{userLoginBean.token == null}">
-            <p>You must be logged in. <h:link value="Go to Login" outcome="login"/></p>
+        <ui:include src="navbar.xhtml"/>
+        <h:panelGroup rendered="#{not serverAdminBean.owner}">
+            <h:outputText value="Only the server owner can access admin features."/>
         </h:panelGroup>
 
-        <h:panelGroup id="browserPage" rendered="#{userLoginBean.token != null}">
-            <h1>Admin Options</h1>
-            <h:form>
-                <h2>Kicking a Member:</h2>
-                <h:outputText value = "username:"/>
-                <br/>
-                <h:inputText value = "#{serverAdminBean.selectedUserName}"/>
-                <br/><br/>
-                <h:commandButton value = "kick user" action = "#{serverAdminBean.kickUser}"/>
-                <br/>
-                
-                <h:commandButton value="Load Server Members" action="#{serverAdminBean.loadServerMembers}"/>
-
-                <ui:repeat value="#{serverAdminBean.serverMembers}" var="member">
-                    <p>#{member}</p>
-                </ui:repeat>
-            </h:form>
-            <br/><br/>
-            <h:form>
-            <h2>Assigning/Removing Permissions:</h2>
+        <h:panelGroup rendered="#{serverAdminBean.owner}">
+        <h:outputText value="#{serverAdminBean.statusMessage}"/>
+        <h1>Admin Options</h1>
+        <br /><br />
+        <h:form>
+            <h2>Kicking a Member:</h2>
             <h:outputText value = "username:"/>
             <br/>
             <h:inputText value = "#{serverAdminBean.selectedUserName}"/>
+            <br/><br/>
+            <h:commandButton value = "kick user" action = "#{serverAdminBean.kickUser}"/>
             <br/>
-            <h:outputText value = "Permission:"/>
-            <br/>
-            <h:selectOneMenu value = "#{serverAdminBean.selectedPermission}">
-                <f:selectItem itemLabel="invite" itemValue="invite"/>
-                <f:selectItem itemLabel="create channels" itemValue="create channels"/>
-                <f:selectItem itemLabel="kick" itemValue="kick"/>
-            </h:selectOneMenu>
-            <br />
-            <h:commandButton value="Grant Permissions" action="#{serverAdminBean.grantPermissions}"/>
-            <h:commandButton value="Revoke Permissions" action="#{serverAdminBean.revokePermissions}"/>
-            </h:form>
+            
+            <h:commandButton value="Load Server Members" action="#{serverAdminBean.loadServerMembers}"/>
+
+            <ui:repeat value="#{serverAdminBean.serverMembers}" var="member">
+                <p>#{member}</p>
+            </ui:repeat>
+        </h:form>
+        <br/><br/>
+        <h:form>
+        <h2>Assigning/Removing Permissions:</h2>
+        <h:outputText value = "username:"/>
+        <br/>
+        <h:inputText value = "#{serverAdminBean.selectedUserName}"/>
+        <br/>
+        <h:outputText value = "Permission:"/>
+        <br/>
+        <h:selectOneMenu value = "#{serverAdminBean.selectedPermission}">
+            <f:selectItem itemLabel="invite" itemValue="invite"/>
+            <f:selectItem itemLabel="create channels" itemValue="create channels"/>
+            <f:selectItem itemLabel="kick" itemValue="kick"/>
+        </h:selectOneMenu>
+        <br />
+        <h:commandButton value="Grant Permissions" action="#{serverAdminBean.grantPermissions}"/>
+        <h:commandButton value="Revoke Permissions" action="#{serverAdminBean.revokePermissions}"/>
+        </h:form>
         </h:panelGroup>
     </h:body>
     </html>
