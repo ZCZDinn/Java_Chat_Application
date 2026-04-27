@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en"
+      xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="jakarta.faces.html"
+      xmlns:f="jakarta.faces.core"
+      xmlns:ui="jakarta.faces.facelets">
+    <f:metadata>
+        <f:viewAction action="#{userLoginBean.checkLogin}"/>
+    </f:metadata>
+    <h:head>
+        <title>Login</title>
+    </h:head>
+    <h:body>
+        <h:panelGroup id="login" rendered="#{userLoginBean.token == null}">
+            <h1>Login / Signup</h1>
+            <h:form>
+                <h:outputLabel for="username">
+                    <h:outputText value="Username: "/>
+                </h:outputLabel>
+                <h:inputText id="username" value="#{userLoginBean.userName}" required="true"/>
+                <h:outputLabel for="password">
+                    <h:outputText value="Password: "/>
+                </h:outputLabel>
+                <h:inputSecret id="password" value="#{userLoginBean.userPassword}" required="true" redisplay="false"/>
+                <h:commandButton value="Login" action="#{userLoginBean.updateToken}"/>
+                <h:commandButton value="Sign-Up" action="#{userLoginBean.signup}">
+                    <f:ajax execute="@form" render="@all"/>
+                </h:commandButton>
+                <h:messages/>
+                <h:outputText value="#{userLoginBean.message}"/>
+            </h:form>
+        </h:panelGroup>
+    </h:body>
+</html>

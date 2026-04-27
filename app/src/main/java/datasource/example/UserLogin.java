@@ -92,7 +92,7 @@ public class UserLogin implements Serializable{
         }
     }
 
-     public void updateToken() {
+     public String updateToken() {
         ensureConnection();
         // In a try-with-resources block
         try (
@@ -112,31 +112,35 @@ public class UserLogin implements Serializable{
             ) {
                 // if rs.next() is true, get the bytes from PW_Hash and call verifyPassword with them; if that is also true
                 if (rs.next() && verifyPassword(rs.getBytes(3))) {
-                    // set token to the token from the ResultSet
                     token = rs.getString(2);
-                    // set userID to the userID from the ResultSet
                     userId = rs.getInt(1);
-                    // set message to the empty string
                     message = "";
-                // if either condition above was false
+                    return "servers?faces-redirect=true"; 
                 } else {
-                    // set message to "Invalid login"
                     message = "Invalid login";
+                    return null;  
                 }
             // Catch SQL and UnsupportedEncoding Exceptions
             } catch (SQLException | UnsupportedEncodingException e) {
                 // set message to the exception's message
                 message = e.getMessage();
                 // return
-                return;
+                return null;
             }
         // Catch SQL Exceptions
         } catch (SQLException e) {
             // set message to the exception's message
             message = e.getMessage();
             // return
-            return;
+            return null;
         }
+    }
+
+    public String checkLogin() {
+        if (token != null) {
+            return "servers?faces-redirect=true";
+        }
+        return null;
     }
 
 
