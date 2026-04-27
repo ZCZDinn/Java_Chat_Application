@@ -25,8 +25,9 @@ import jakarta.inject.Named;
 @Named("chatLogBean")
 @SessionScoped
 public class Messages implements Serializable{
+    private static final long serialVersionUID = 1L;
     private List<String> chatLog = new LinkedList<>();
-    private Connection conn;
+    private transient Connection conn;
     private String messageToPost;
     @Inject private UserLogin login;
 
@@ -54,8 +55,22 @@ public class Messages implements Serializable{
         }           
     }
 
+    private void ensureConnection() {
+        if (this.conn == null) {
+            try {
+                Context ctx = new InitialContext();
+                DataSource ds = (DataSource)ctx.lookup("java:/comp/env/jdbc/FinalJava");
+                this.conn = ds.getConnection();
+            } catch (NamingException | SQLException e) {
+                System.out.println(e.getMessage());
+            }
+        }
+    }
+  
     // Fetches all chat messages from the database and refreshes the displayed chat log
     public void pullLog() {
+        ensureConnection();
+        // In a try-with-resources resource block
         try (
             PreparedStatement stmt = conn.prepareStatement("SELECT m.message, m.sentOn, u.username" +
                 " FROM messages m" +
@@ -75,6 +90,8 @@ public class Messages implements Serializable{
 
     // Saves the user's typed message to the database and refreshes the chat log
     public void postMessage(){
+        ensureConnection();
+        // In a try-with-resources resource block
         try (
             PreparedStatement stmt = conn.prepareStatement("INSERT INTO messages (message, sentOn, userID) VALUES (?, ?, ?)");
         ) {

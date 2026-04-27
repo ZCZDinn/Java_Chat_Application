@@ -25,6 +25,7 @@ public class ServerAdmin implements Serializable {
     @Inject
     private ServerView serverView;
     private int selectedUserId = 0;
+    private String selectedUserName;
     private List<String> permissions = new LinkedList<>();
     private String selectedPermission;
     private List<String> serverMembers = new LinkedList<>();
@@ -53,6 +54,19 @@ public class ServerAdmin implements Serializable {
         }
     }
 
+    private int findUserIdByUserName() {
+        try(PreparedStatement stmt = conn.prepareStatement("SELECT userID FROM users WHERE userName = ?;");){
+            stmt.setString(1, getSelectedUserName());
+            ResultSet rs = stmt.executeQuery();
+            if(rs.next()){
+                return rs.getInt("userID");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return 0;
+    }
+
     public void loadServerMembers() {
         serverMembers.clear();
         try(PreparedStatement stmt = conn.prepareStatement(
@@ -79,21 +93,22 @@ public class ServerAdmin implements Serializable {
     }
 
     public void kickUser() {
-         if(getSelectedUserId()!=0){
+        int userID = findUserIdByUserName();
+         if(userID!=0){
             try(PreparedStatement selectStmt = conn.prepareStatement(
                     "SELECT * FROM server_members WHERE userID = ? AND serverID = ?;");
                 ){
-                    selectStmt.setInt(1, getSelectedUserId());
+                    selectStmt.setInt(1, userID);
                     selectStmt.setInt(2, getCurrentServerId());
                     ResultSet rs = selectStmt.executeQuery();
                     if(!rs.next()){
-                        System.out.println("No member of this ID in this server.");
+                        System.out.println("No member by this name in the server.");
                         return;
                     } else {
                         try(PreparedStatement deleteStmt = conn.prepareStatement(
                             "DELETE FROM server_members WHERE userID = ? AND serverID = ?;"
                         );) {
-                            deleteStmt.setInt(1, getSelectedUserId());
+                            deleteStmt.setInt(1, userID);
                             deleteStmt.setInt(2, getCurrentServerId());
                             deleteStmt.executeUpdate();
                             System.out.println("Member deleted from server successfully!");
@@ -104,15 +119,19 @@ public class ServerAdmin implements Serializable {
                 } catch (SQLException e) {
                     e.printStackTrace();    
                 }
+            } else {
+                System.out.println("No user found with that name.");
+                return;
             }
         }
 
     public void grantPermissions() {
-        if(getSelectedUserId()!=0){
+        int userID = findUserIdByUserName();
+        if(userID!=0){
             try(PreparedStatement selectStmt = conn.prepareStatement(
                     "SELECT * FROM server_members WHERE userID = ? AND serverID = ?;");
                 ){
-                    selectStmt.setInt(1, getSelectedUserId());
+                    selectStmt.setInt(1, userID);
                     selectStmt.setInt(2, getCurrentServerId());
                     ResultSet rs = selectStmt.executeQuery();
                     if(rs.next()){
@@ -137,14 +156,14 @@ public class ServerAdmin implements Serializable {
                             try(PreparedStatement selectStmt2 = conn.prepareStatement(
                             "SELECT * FROM member_permissions WHERE userID = ? AND serverID = ?;");
                             ){
-                                selectStmt2.setInt(1, getSelectedUserId());
+                                selectStmt2.setInt(1, userID);
                                 selectStmt2.setInt(2, getCurrentServerId());
                                 ResultSet rs2 = selectStmt2.executeQuery();
                                 if(!rs2.next()){
                                     try(PreparedStatement insertStmt = conn.prepareStatement(
                                     "INSERT INTO member_permissions (userID, serverID, canInvite, canKick, canCreateChannels) VALUES (?,?,?,?,?);");
                                     )  {
-                                        insertStmt.setInt(1, getSelectedUserId());
+                                        insertStmt.setInt(1, userID);
                                         insertStmt.setInt(2, getCurrentServerId());
                                         insertStmt.setBoolean(3, canInvite);
                                         insertStmt.setBoolean(4, canKick);
@@ -159,7 +178,7 @@ public class ServerAdmin implements Serializable {
                                         try(PreparedStatement updateStmtInv = conn.prepareStatement(
                                         "UPDATE member_permissions SET canInvite = true WHERE userID = ? AND serverID = ?;");)
                                         {
-                                            updateStmtInv.setInt(1, getSelectedUserId());
+                                            updateStmtInv.setInt(1, userID);
                                             updateStmtInv.setInt(2, getCurrentServerId());
                                             updateStmtInv.executeUpdate();
                                             System.out.println("Permission updated successfully!");
@@ -170,7 +189,7 @@ public class ServerAdmin implements Serializable {
                                         try(PreparedStatement updateStmtCC = conn.prepareStatement(
                                         "UPDATE member_permissions SET canCreateChannels = true WHERE userID = ? AND serverID = ?;");)
                                         { 
-                                            updateStmtCC.setInt(1, getSelectedUserId());
+                                            updateStmtCC.setInt(1, userID);
                                             updateStmtCC.setInt(2, getCurrentServerId());
                                             updateStmtCC.executeUpdate();
                                             System.out.println("Permission updated successfully!");
@@ -181,7 +200,7 @@ public class ServerAdmin implements Serializable {
                                         try(PreparedStatement updateStmtkick= conn.prepareStatement(
                                         "UPDATE member_permissions SET canKick = true WHERE userID = ? AND serverID = ?;");)
                                         { 
-                                            updateStmtkick.setInt(1, getSelectedUserId());
+                                            updateStmtkick.setInt(1, userID);
                                             updateStmtkick.setInt(2, getCurrentServerId());
                                             updateStmtkick.executeUpdate();
                                             System.out.println("Permission updated successfully!");
@@ -195,7 +214,7 @@ public class ServerAdmin implements Serializable {
                         }
 
                     } else {
-                        System.out.println("No member of this ID in this server.");
+                        System.out.println("No member of this username in this server.");
                         return;
                     }
                 }
@@ -206,11 +225,12 @@ public class ServerAdmin implements Serializable {
     }
 
     public void revokePermissions() {
-        if(getSelectedUserId()!=0){
+        int userID = findUserIdByUserName();
+        if(userID!=0){
             try(PreparedStatement selectStmt = conn.prepareStatement(
                     "SELECT * FROM server_members WHERE userID = ? AND serverID = ?;");
                 ){
-                    selectStmt.setInt(1, getSelectedUserId());
+                    selectStmt.setInt(1, userID);
                     selectStmt.setInt(2, getCurrentServerId());
                     ResultSet rs = selectStmt.executeQuery();
                     if(rs.next()){
@@ -235,7 +255,7 @@ public class ServerAdmin implements Serializable {
                             try(PreparedStatement selectStmt2 = conn.prepareStatement(
                             "SELECT * FROM member_permissions WHERE userID = ? AND serverID = ?;");
                             ){
-                                selectStmt2.setInt(1, getSelectedUserId());
+                                selectStmt2.setInt(1, userID);
                                 selectStmt2.setInt(2, getCurrentServerId());
                                 ResultSet rs2 = selectStmt2.executeQuery();
                                 if(!rs2.next()){
@@ -246,7 +266,7 @@ public class ServerAdmin implements Serializable {
                                         try(PreparedStatement updateStmtInv = conn.prepareStatement(
                                         "UPDATE member_permissions SET canInvite = false WHERE userID = ? AND serverID = ?;");)
                                         {
-                                            updateStmtInv.setInt(1, getSelectedUserId());
+                                            updateStmtInv.setInt(1, userID);
                                             updateStmtInv.setInt(2, getCurrentServerId());
                                             updateStmtInv.executeUpdate();
                                             System.out.println("Permission revoked successfully!");
@@ -257,7 +277,7 @@ public class ServerAdmin implements Serializable {
                                         try(PreparedStatement updateStmtCC = conn.prepareStatement(
                                         "UPDATE member_permissions SET canCreateChannels = false WHERE userID = ? AND serverID = ?;");)
                                         { 
-                                            updateStmtCC.setInt(1, getSelectedUserId());
+                                            updateStmtCC.setInt(1, userID);
                                             updateStmtCC.setInt(2, getCurrentServerId());
                                             updateStmtCC.executeUpdate();
                                             System.out.println("Permission revoked successfully!");
@@ -268,7 +288,7 @@ public class ServerAdmin implements Serializable {
                                         try(PreparedStatement updateStmtkick= conn.prepareStatement(
                                         "UPDATE member_permissions SET canKick = false WHERE userID = ? AND serverID = ?;");)
                                         { 
-                                            updateStmtkick.setInt(1, getSelectedUserId());
+                                            updateStmtkick.setInt(1, userID);
                                             updateStmtkick.setInt(2, getCurrentServerId());
                                             updateStmtkick.executeUpdate();
                                             System.out.println("Permission revoked successfully!");
@@ -282,7 +302,7 @@ public class ServerAdmin implements Serializable {
                         }
 
                     } else {
-                        System.out.println("No member of this ID in this server.");
+                        System.out.println("No member of this username in this server.");
                         return;
                     }
                 }
@@ -302,6 +322,14 @@ public class ServerAdmin implements Serializable {
 
     public void setSelectedUserId(int selectedUserId) {
         this.selectedUserId = selectedUserId;
+    }
+
+    public String getSelectedUserName() {
+        return selectedUserName;
+    }
+
+    public void setSelectedUserName(String selectedUserName) {
+        this.selectedUserName = selectedUserName;
     }
 
     public List<String> getPermissions() {

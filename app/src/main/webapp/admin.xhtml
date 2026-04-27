@@ -10,9 +10,10 @@
     <h:body>
         <h1>Admin Options</h1>
         <h:form>
-            <h:outputText value = "userID:"/>
+            <h2>Kicking a Member:</h2>
+            <h:outputText value = "username:"/>
             <br/>
-            <h:inputText value = "#{serverAdminBean.selectedUserId}"/>
+            <h:inputText value = "#{serverAdminBean.selectedUserName}"/>
             <br/><br/>
             <h:commandButton value = "kick user" action = "#{serverAdminBean.kickUser}"/>
             <br/>
@@ -25,14 +26,18 @@
         </h:form>
         <br/><br/>
         <h:form>
-        <h2>Permissions:</h2>
-        <h:outputText value = "userID:"/>
+        <h2>Assigning/Removing Permissions:</h2>
+        <h:outputText value = "username:"/>
         <br/>
-        <h:inputText value = "#{serverAdminBean.selectedUserId}"/>
+        <h:inputText value = "#{serverAdminBean.selectedUserName}"/>
         <br/>
         <h:outputText value = "Permission:"/>
         <br/>
-        <h:inputText value = "#{serverAdminBean.selectedPermission}"/>
+        <h:selectOneMenu value = "#{serverAdminBean.selectedPermission}">
+            <f:selectItem itemLabel="invite" itemValue="invite"/>
+            <f:selectItem itemLabel="create channels" itemValue="create channels"/>
+            <f:selectItem itemLabel="kick" itemValue="kick"/>
+        </h:selectOneMenu>
         <br />
         <h:commandButton value="Grant Permissions" action="#{serverAdminBean.grantPermissions}"/>
         <h:commandButton value="Revoke Permissions" action="#{serverAdminBean.revokePermissions}"/>

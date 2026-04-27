@@ -49,10 +49,11 @@ public class ServerManager implements Serializable {
     private String statusMessage = "";
     private List<ServerEntry> myServers = new LinkedList<>();
     private List<ServerEntry> publicServers = new LinkedList<>();
-    private Connection conn;
+    private transient Connection conn;
 
     @Inject private UserLogin login;
     @Inject private ServerView serverView;
+    @Inject private CurrentContext currentContext;
 
     @PostConstruct
     public void openConnection() {
@@ -76,9 +77,22 @@ public class ServerManager implements Serializable {
         }
     }
 
+    private void ensureConnection() {
+        if (conn == null) {
+            try {
+                Context ctx = new InitialContext();
+                DataSource ds = (DataSource) ctx.lookup("java:/comp/env/jdbc/FinalJava");
+                conn = ds.getConnection();
+            } catch (NamingException | SQLException e) {
+                System.out.println(e.getMessage());
+            }
+        }
+    }
+
     // Req #1, #2 — Creates a public or private server. Owner is auto-joined.
     // For private servers, an invite code is auto-generated (UUID).
     public void createServer() {
+        ensureConnection();
         int me = login.getUserId();
         lastGeneratedInviteCode = null;
 
@@ -143,6 +157,7 @@ public class ServerManager implements Serializable {
 
     // Loads all servers the current user belongs to
     public void loadMyServers() {
+        ensureConnection();
         myServers.clear();
         try (PreparedStatement stmt = conn.prepareStatement(
                 "SELECT s.serverID, s.name, s.isPublic, u.userName " +
@@ -163,6 +178,7 @@ public class ServerManager implements Serializable {
 
     // Req #3 — Loads all public servers for browsing
     public void loadPublicServers() {
+        ensureConnection();
         publicServers.clear();
         try (PreparedStatement stmt = conn.prepareStatement(
                 "SELECT s.serverID, s.name, u.userName, " +
@@ -184,6 +200,7 @@ public class ServerManager implements Serializable {
 
     // Req #4 — Joins a public server from the browse page; navigates to server.xhtml
     public String joinPublicServer(int serverId) {
+        ensureConnection();
         int me = login.getUserId();
         try {
             try (PreparedStatement check = conn.prepareStatement(
@@ -223,6 +240,7 @@ public class ServerManager implements Serializable {
 
     // Req #5 — Joins a private server using an integer invite code
     public String joinByInviteCode() {
+        ensureConnection();
         int me = login.getUserId();
         try {
             int serverId;
@@ -264,7 +282,13 @@ public class ServerManager implements Serializable {
 
     // Opens a server the user already belongs to
     public String openServer(int serverId) {
+        currentContext.setCurrentServerID(serverId);
         return serverView.loadServer(serverId);
+    }
+
+    // Sets the current server in context (for channel operations)
+    public void selectServer(int serverId) {
+        currentContext.setCurrentServerID(serverId);
     }
 
     public String getServerName() { return serverName; }

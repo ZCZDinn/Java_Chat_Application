@@ -23,8 +23,11 @@ import jakarta.inject.Named;
 @SessionScoped
 public class Friends implements Serializable {
 
-    // Represents one friend in the friends list (their ID and display name)
+    private static final long serialVersionUID = 1L;
+
+     // Represents one friend in the friends list (their ID and display name)
     public static class FriendEntry implements Serializable {
+        private static final long serialVersionUID = 1L;
         private int userId;
         private String userName;
 
@@ -41,7 +44,7 @@ public class Friends implements Serializable {
     private String statusMessage = "";
     private List<FriendEntry> friendList = new LinkedList<>();
     private List<FriendEntry> pendingRequests = new LinkedList<>();
-    private Connection conn;
+    private transient Connection conn;
     @Inject private UserLogin login;
 
     @PostConstruct
@@ -65,9 +68,22 @@ public class Friends implements Serializable {
             }
         }
     }
+  
+    private void ensureConnection() {
+        if (conn == null) {
+            try {
+                Context ctx = new InitialContext();
+                DataSource ds = (DataSource) ctx.lookup("java:/comp/env/jdbc/FinalJava");
+                conn = ds.getConnection();
+            } catch (NamingException | SQLException e) {
+                System.out.println(e.getMessage());
+            }
+        }
+    }
 
     // Fetches the current user's accepted friends from the database and stores them for display
     public void loadFriends() {
+        ensureConnection();
         friendList.clear();
         try (
             PreparedStatement stmt = conn.prepareStatement(
@@ -88,6 +104,7 @@ public class Friends implements Serializable {
 
     // Fetches any friend requests other users have sent to the current user that haven't been accepted yet
     public void loadPendingRequests() {
+        ensureConnection();
         pendingRequests.clear();
         try (
             PreparedStatement stmt = conn.prepareStatement(
@@ -109,6 +126,7 @@ public class Friends implements Serializable {
     // Sends a friend request to another user by ID.
     // If that user already sent you a request, it automatically becomes accepted for both sides.
     public void addFriend() {
+        ensureConnection();
         int me = login.getUserId();
         if (friendIdInput == me) {
             statusMessage = "You cannot add yourself as a friend.";
@@ -157,6 +175,7 @@ public class Friends implements Serializable {
 
     // Blocks a user by ID. They are also removed from that user's friend list so they can no longer see you.
     public void blockUser() {
+        ensureConnection();
         int me = login.getUserId();
         try (PreparedStatement stmt = conn.prepareStatement(
                 "INSERT INTO friends (userID, friendID, status) VALUES (?, ?, 'blocked') " +
@@ -185,6 +204,7 @@ public class Friends implements Serializable {
 
     // Accepts a pending friend request from another user, making the friendship mutual in the database
     public void acceptFriend(int requesterId) {
+        ensureConnection();
         int me = login.getUserId();
         try {
             try (PreparedStatement upd = conn.prepareStatement(

@@ -8,6 +8,7 @@
         <title>Roles</title>
     </h:head>
     <h:body>
+        <h1>Manage Roles:</h1>
         <h:form>
             <h1>Create Role:</h1>
             <h:inputText value="#{roleManagerBean.newRole}"/>
@@ -19,8 +20,8 @@
         <br/>
         <h:form>
             <h1>Add/Remove Roles:</h1>
-            <h:outputText value="UserID:"/>
-            <h:inputText value="#{roleManagerBean.currentUserId}"/>
+            <h:outputText value="Username:"/>
+            <h:inputText value="#{roleManagerBean.selectedUserName}"/>
 
             <h:outputText value="RoleID:"/>
             <h:inputText value="#{roleManagerBean.currentRoleId}"/>
@@ -32,8 +33,8 @@
         <br/>
         <h:form>
             <h1>User Roles:</h1>
-            <h:outputText value="UserID:"/>
-            <h:inputText value="#{roleManagerBean.currentUserId}"/>
+            <h:outputText value="Username:"/>
+            <h:inputText value="#{roleManagerBean.selectedUserName}"/>
 
             <h:commandButton value="Load User Roles" action="#{roleManagerBean.loadUserRoles}"/>
 

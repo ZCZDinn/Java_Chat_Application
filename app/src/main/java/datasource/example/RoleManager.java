@@ -27,10 +27,11 @@ public class RoleManager implements Serializable {
 
     private List<String> roles = new LinkedList<>();
     private List<String> userRoles = new LinkedList<>();
+    private String selectedUserName;
     private int currentUserId = 0;
     private int currentRoleId = 0;
     private String newRole = "";
-
+    private String statusMessage = "";
 
     @PostConstruct
     public void openConnection() {
@@ -54,15 +55,29 @@ public class RoleManager implements Serializable {
         }
     }
 
+    private int findUserIdByUserName() {
+        try(PreparedStatement stmt = conn.prepareStatement("SELECT userID FROM users WHERE userName = ?;");){
+            stmt.setString(1, getSelectedUserName());
+            ResultSet rs = stmt.executeQuery();
+            if(rs.next()){
+                return rs.getInt("userID");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return 0;
+    }
+
     public void loadRolesForServer() {
         roles.clear();
         try(PreparedStatement stmt = conn.prepareStatement(
-                "SELECT name FROM roles WHERE serverID = ?");){
+                "SELECT roleID, name FROM roles WHERE serverID = ?");){
             stmt.setInt(1, getCurrentServerId());
             ResultSet rs = stmt.executeQuery();
             while(rs.next()){
-                String eachRowName = rs.getString(1);
-                roles.add(eachRowName);
+                int eachRowId = rs.getInt(1);
+                String eachRowName = rs.getString(2);
+                roles.add(eachRowId + " - " + eachRowName);
             }
             System.out.println(roles);
         } catch (SQLException e){
@@ -98,6 +113,7 @@ public class RoleManager implements Serializable {
                     loadRolesForServer();
                     newRole = "";
                     System.out.println("new role created successfully!");
+                    statusMessage = "new role created successfully!";
                     } catch (SQLException e){
                     System.out.println("could not create new role");
                     e.printStackTrace();
@@ -109,12 +125,13 @@ public class RoleManager implements Serializable {
     }
 
     public void assignRoleToUser() {
-    if(getCurrentUserId()!=0){
+    int userID = findUserIdByUserName();
+    if(userID!=0){
         if(getCurrentRoleId()!=0){
             try(PreparedStatement selectStmt = conn.prepareStatement(
                     "SELECT * FROM user_roles WHERE userID = ? AND roleID = ?;");
                 ){
-                    selectStmt.setInt(1, getCurrentUserId());
+                    selectStmt.setInt(1, userID);
                     selectStmt.setInt(2, getCurrentRoleId());
                     ResultSet rs = selectStmt.executeQuery();
                     if(rs.next()){
@@ -124,7 +141,7 @@ public class RoleManager implements Serializable {
                         try(PreparedStatement insertStmt = conn.prepareStatement(
                             "INSERT INTO user_roles (userID, roleID) VALUES (?,?);"
                         );) {
-                            insertStmt.setInt(1, getCurrentUserId());
+                            insertStmt.setInt(1, userID);
                             insertStmt.setInt(2, getCurrentRoleId());
                             insertStmt.executeUpdate();
                             System.out.println("User's role added successfully!");
@@ -140,18 +157,19 @@ public class RoleManager implements Serializable {
             System.out.println("Must be a valid role ID. Please try again.");
         }
     } else {
-        System.out.println("Must be a valid user ID. Please try again.");
+        System.out.println("Must be a valid username. Please try again.");
         return;
     }
     }
 
     public void deleteUserRole() {
-        if(getCurrentUserId()!=0){
+        int userID = findUserIdByUserName();
+        if(userID!=0){
             if(getCurrentRoleId()!=0){
                 try(PreparedStatement stmt = conn.prepareStatement(
                     "DELETE FROM user_roles WHERE userID = ? AND roleID = ?;");
                 ){
-                    stmt.setInt(1, getCurrentUserId());
+                    stmt.setInt(1, userID);
                     stmt.setInt(2, getCurrentRoleId());
                     int rolesDeleted = stmt.executeUpdate();
                     if(rolesDeleted > 0) {
@@ -169,30 +187,36 @@ public class RoleManager implements Serializable {
                 return;
             }
         } else {
-            System.out.println("Must be a valid user ID. Please try again.");
+            System.out.println("Must be a valid username. Please try again.");
             return;
      }
     }
 
     public void loadUserRoles() {
         userRoles.clear();
+        int userID = findUserIdByUserName();
+        if (userID == 0){
+            System.out.println("Must be a valid username. Please try again.");
+           return;
+        }
         try(
             PreparedStatement userStmt = conn.prepareStatement(
                 "SELECT roleID from user_roles WHERE userID = ?;");
         ){ 
-            userStmt.setInt(1, getCurrentUserId());
+            userStmt.setInt(1, userID);
             ResultSet rs = userStmt.executeQuery();
             while (rs.next()){
                 int rsRoleId = rs.getInt("roleID");
                 try(
                     PreparedStatement roleStmt = conn.prepareStatement(
-                        "SELECT name FROM roles WHERE roleID = ?;"
+                        "SELECT roleID, name FROM roles WHERE roleID = ?;"
                     );){
                         roleStmt.setInt(1, rsRoleId);
                         ResultSet rs2 = roleStmt.executeQuery();
                         if(rs2.next()){
                             String roleName = rs2.getString("name");
-                            userRoles.add(roleName);
+                            int roleID = rs2.getInt("roleID");
+                            userRoles.add(roleID + " - " + roleName );
                         }
                     }
             }
@@ -200,6 +224,14 @@ public class RoleManager implements Serializable {
         } catch (SQLException e){
             e.printStackTrace();
         }
+    }
+
+    public String getSelectedUserName() {
+        return selectedUserName;
+    }
+
+    public void setSelectedUserName(String selectedUserName) {
+        this.selectedUserName = selectedUserName;
     }
 
     public List<String> getRoles() {
@@ -237,5 +269,10 @@ public class RoleManager implements Serializable {
     public void setCurrentUserId(int currentUserId) {
         this.currentUserId = currentUserId;
     }
+    
+    public String getStatusMessage() {
+        return statusMessage;
+    }
+
 
 }
