@@ -36,7 +36,7 @@ public class DirectMessages implements Serializable {
     public void openConnection() {
         try {
             Context ctx = new InitialContext();
-            DataSource ds = (DataSource) ctx.lookup("java:/comp/env/jdbc/Assignment2");
+            DataSource ds = (DataSource) ctx.lookup("java:/comp/env/jdbc/FinalJava");
             conn = ds.getConnection();
         } catch (NamingException | SQLException e) {
             System.out.println(e.getMessage());

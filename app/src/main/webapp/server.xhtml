@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en"
+      xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="jakarta.faces.html"
+      xmlns:f="jakarta.faces.core"
+      xmlns:ui="jakarta.faces.facelets">
+    <h:head>
+        <title>Server</title>
+    </h:head>
+    <h:body>
+        <h:panelGroup rendered="#{userLoginBean.token == null}">
+            <p>You must be logged in. <h:link value="Go to Login" outcome="chat"/></p>
+        </h:panelGroup>
+
+        <!-- No server loaded yet -->
+        <h:panelGroup rendered="#{userLoginBean.token != null and serverViewBean.currentServerId lt 0}">
+            <p>No server selected. <h:link value="Go to My Servers" outcome="servers"/></p>
+        </h:panelGroup>
+
+        <h:panelGroup id="serverPage" rendered="#{userLoginBean.token != null and serverViewBean.currentServerId ge 0}">
+            <h1><h:outputText value="#{serverViewBean.currentServerName}"/></h1>
+            <p>Type: <h:outputText value="#{serverViewBean.currentServerPublic ? 'Public' : 'Private'}"/></p>
+
+            <h:panelGroup rendered="#{not empty serverViewBean.statusMessage}">
+                <p><h:outputText value="#{serverViewBean.statusMessage}"/></p>
+            </h:panelGroup>
+
+            <!-- Members and Roles (Req #12) -->
+            <h2>Members</h2>
+            <h:form>
+                <h:commandButton value="Refresh Members" action="#{serverViewBean.loadMembers}">
+                    <f:ajax execute="@form" render=":serverPage"/>
+                </h:commandButton>
+            </h:form>
+
+            <h:panelGroup rendered="#{empty serverViewBean.members}">
+                <p>No members found.</p>
+            </h:panelGroup>
+
+            <h:dataTable value="#{serverViewBean.members}" var="m"
+                         rendered="#{not empty serverViewBean.members}"
+                         border="1">
+                <h:column>
+                    <f:facet name="header">Username</f:facet>
+                    <h:outputText value="#{m.userName}"/>
+                </h:column>
+                <h:column>
+                    <f:facet name="header">Role</f:facet>
+                    <h:outputText value="#{m.roleName}"/>
+                </h:column>
+            </h:dataTable>
+
+            <!-- Invite Code (private servers only, visible to all members) -->
+            <h:panelGroup rendered="#{not serverViewBean.currentServerPublic}">
+                <h2>Invite Code</h2>
+                <p>Most recent invite code:
+                    <h:outputText value="#{serverViewBean.currentInviteCode}"/>
+                    <h:outputText value=" (none generated yet)"
+                      rendered="#{empty serverViewBean.currentInviteCode}"/>
+                </p>
+                <!-- Regenerate button only shown to the owner -->
+                <h:form rendered="#{serverViewBean.ownerID == userLoginBean.userId}">
+                    <h:commandButton value="Regenerate Invite Code"
+                         action="#{serverViewBean.regenerateInviteCode}">
+                        <f:ajax execute="@form" render=":serverPage"/>
+                    </h:commandButton>
+                </h:form>
+            </h:panelGroup>
+
+            <p><h:link value="Back to My Servers" outcome="servers"/></p>
+        </h:panelGroup>
+    </h:body>
+</html>

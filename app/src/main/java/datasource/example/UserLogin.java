@@ -53,7 +53,7 @@ public class UserLogin implements Serializable{
             token = null;
             // create a new InitialContext
             Context ctx = new InitialContext();
-            // Get the DataSource by lookup with jdbc/FinalJava under the /comp/env/ in the context
+            // Get the DataSource by lookup with jdbc/Assignment2 under the /comp/env/ in the context
             DataSource ds = (DataSource) ctx.lookup("java:/comp/env/jdbc/FinalJava");
             // Use getConnection on the datasource to assign the conn field
             conn = ds.getConnection();
