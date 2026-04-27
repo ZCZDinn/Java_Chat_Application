@@ -29,8 +29,8 @@ public class ServerAdmin implements Serializable {
     private List<String> permissions = new LinkedList<>();
     private String selectedPermission;
     private List<String> serverMembers = new LinkedList<>();
-    
-    
+    private String statusMessage = "";
+
     @PostConstruct
     public void openConnection() {
         try {
@@ -112,6 +112,7 @@ public class ServerAdmin implements Serializable {
                             deleteStmt.setInt(2, getCurrentServerId());
                             deleteStmt.executeUpdate();
                             System.out.println("Member deleted from server successfully!");
+                            statusMessage = "member deleted successfully!";
                         } catch (SQLException e) {
                             e.printStackTrace();
                         }
@@ -170,6 +171,7 @@ public class ServerAdmin implements Serializable {
                                         insertStmt.setBoolean(5, canCreateChannels);
                                         insertStmt.executeUpdate();
                                         System.out.println("Permissions updated successfully!");
+                                        statusMessage = "permission granted successfully!";
                                     } catch (SQLException e) {
                                         e.printStackTrace();
                                     }   
@@ -182,6 +184,7 @@ public class ServerAdmin implements Serializable {
                                             updateStmtInv.setInt(2, getCurrentServerId());
                                             updateStmtInv.executeUpdate();
                                             System.out.println("Permission updated successfully!");
+                                            statusMessage = "permission granted successfully!";
                                         } catch (SQLException e) {
                                             e.printStackTrace();
                                         }
@@ -193,6 +196,7 @@ public class ServerAdmin implements Serializable {
                                             updateStmtCC.setInt(2, getCurrentServerId());
                                             updateStmtCC.executeUpdate();
                                             System.out.println("Permission updated successfully!");
+                                            statusMessage = "permission granted successfully!";
                                         } catch (SQLException e) {
                                             e.printStackTrace();
                                         }
@@ -204,6 +208,7 @@ public class ServerAdmin implements Serializable {
                                             updateStmtkick.setInt(2, getCurrentServerId());
                                             updateStmtkick.executeUpdate();
                                             System.out.println("Permission updated successfully!");
+                                            statusMessage = "permission granted successfully!";
                                         } catch (SQLException e) {
                                             e.printStackTrace();
                                         }
@@ -270,6 +275,7 @@ public class ServerAdmin implements Serializable {
                                             updateStmtInv.setInt(2, getCurrentServerId());
                                             updateStmtInv.executeUpdate();
                                             System.out.println("Permission revoked successfully!");
+                                            statusMessage = "permission revoked successfully!";
                                         } catch (SQLException e) {
                                             e.printStackTrace();
                                         }
@@ -281,6 +287,7 @@ public class ServerAdmin implements Serializable {
                                             updateStmtCC.setInt(2, getCurrentServerId());
                                             updateStmtCC.executeUpdate();
                                             System.out.println("Permission revoked successfully!");
+                                            statusMessage = "permission revoked successfully!";
                                         } catch (SQLException e) {
                                             e.printStackTrace();
                                         }
@@ -292,6 +299,7 @@ public class ServerAdmin implements Serializable {
                                             updateStmtkick.setInt(2, getCurrentServerId());
                                             updateStmtkick.executeUpdate();
                                             System.out.println("Permission revoked successfully!");
+                                            statusMessage = "permission revoked successfully!";
                                         } catch (SQLException e) {
                                             e.printStackTrace();
                                         }
@@ -356,4 +364,8 @@ public class ServerAdmin implements Serializable {
         this.serverMembers = serverMembers;
     }
 
+        
+    public String getStatusMessage() {
+        return statusMessage;
+    }
 }
