@@ -10,7 +10,14 @@
 
 <h:body>
 
+<f:view>
+    <f:event type="preRenderView" listener="#{channelChatBean.loadChannels}"/>
+
 <h2>Channel</h2>
+
+<p><h:link value="Back to My Servers" outcome="servers"/></p>
+
+
 
 <!-- STATUS MESSAGE -->
 <h:panelGroup rendered="#{not empty channelChatBean.statusMessage}">
@@ -34,7 +41,11 @@
 
         <h:commandButton
             value="#{channelChatBean.channelNames[i.index]}"
-            action="#{channelChatBean.openChannel(cid)}" />
+            action="#{channelChatBean.openChannel}">
+            <f:setPropertyActionListener 
+                target="#{channelChatBean.currentChannelId}" 
+                value="#{cid}" />
+        </h:commandButton>
 
         <br/>
 
@@ -101,5 +112,6 @@
 
 </h:panelGroup>
 
+</f:view>
 </h:body>
 </html>

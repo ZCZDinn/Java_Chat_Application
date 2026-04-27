@@ -76,9 +76,8 @@ public class ChannelChat implements Serializable {
     // ----------------------------
     // CHANNELS
     // ----------------------------
-    public void openChannel(int channelId) {
+    public void openChannel() {
         ensureConnection();
-        this.currentChannelId = channelId;
         loadMessages();
     }
 
@@ -253,6 +252,10 @@ public class ChannelChat implements Serializable {
             this.text = text;
             this.imageURL = imageURL;
         }
+
+        public int getId() { return id; }
+        public String getText() { return text; }
+        public String getImageURL() { return imageURL; }
     }
 
     // ----------------------------
@@ -288,6 +291,7 @@ public class ChannelChat implements Serializable {
     public List<MessageEntry> getChatLog() { return chatLog; }
 
     public int getCurrentChannelId() { return currentChannelId; }
+    public void setCurrentChannelId(int currentChannelId) { this.currentChannelId = currentChannelId; }
 
     public List<Integer> getChannelIds() { return channelIds; }
     public List<String> getChannelNames() { return channelNames; }
