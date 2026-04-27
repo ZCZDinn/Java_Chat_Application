@@ -71,10 +71,11 @@
 
             <p>#{m.text}</p>
 
-            <!-- IMAGE -->
-            <h:graphicImage value="#{m.imageURL}"
-                            rendered="#{m.imageURL != null}"
+            <!-- IMAGE FROM DATABASE -->
+            <h:graphicImage value="serveImage?messageId=#{m.id}"
+                            rendered="#{m.hasImage()}"
                             width="200"/>
+
 
             <!-- DELETE -->
             <h:commandButton value="Delete"
@@ -110,6 +111,28 @@
 
     </h:form>
 
+</h:panelGroup>
+
+<!-- OWNER ONLY: MANAGE PERMISSIONS -->
+<h:panelGroup rendered="#{channelChatBean.currentChannelId != -1 and channelChatBean.serverOwner}">
+    <hr/>
+    <h3>Channel Permissions (Owner Only)</h3>
+    <h:form>
+        <ui:repeat value="#{channelChatBean.roleIds}" var="rid" varStatus="i">
+            <p>
+                <strong>#{channelChatBean.roleNames[i.index]}</strong>
+                <br/>
+                <h:selectBooleanCheckbox value="#{channelChatBean.roleCanRead[i.index]}" id="read"/>
+                <h:outputLabel for="read" value="Can Read"/>
+                
+                <h:selectBooleanCheckbox value="#{channelChatBean.roleCanWrite[i.index]}" id="write"/>
+                <h:outputLabel for="write" value="Can Write"/>
+                
+                <h:commandButton value="Update"
+                    action="#{channelChatBean.updateChannelPermissions(rid, channelChatBean.roleCanRead[i.index], channelChatBean.roleCanWrite[i.index])}" />
+            </p>
+        </ui:repeat>
+    </h:form>
 </h:panelGroup>
 
 </f:view>
