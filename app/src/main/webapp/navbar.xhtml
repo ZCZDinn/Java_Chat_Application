@@ -1,15 +1,25 @@
 <ui:composition xmlns="http://www.w3.org/1999/xhtml"
                 xmlns:h="jakarta.faces.html"
                 xmlns:ui="jakarta.faces.facelets">
-    <!-- Navigation bar — only shown when a user is logged in -->
-    <h:panelGroup rendered="#{userLoginBean.token != null}">
-        <nav>
-            <h:graphicImage library="images" name="logo.png" alt="Logo" style="height: 32px; vertical-align: middle;"/>
-            <h:link value="My Servers" outcome="servers"/> |
-            <h:link value="Browse Servers" outcome="server-browser"/> |
-            <h:link value="Friends" outcome="friends"/>
-            <span style="float: right;">Logged in as: <b><h:outputText value="#{userLoginBean.userName}"/></b></span>
-        </nav>
-        <hr/>
+    <!-- Load stylesheet into the page's <head> -->
+    <h:outputStylesheet library="css" name="style.css"/>
+
+    <!-- Sidebar — only shown when logged in -->
+    <h:panelGroup layout="block" rendered="#{userLoginBean.token != null}">
+        <aside class="sidebar">
+            <div class="sidebar-logo">
+                <h:graphicImage library="images" name="logo.png" alt="Barbie's DreamChat Logo"/>
+                <span>Barbie's DreamChat</span>
+            </div>
+            <nav class="sidebar-nav">
+                <h:link value="My Servers" outcome="servers"/>
+                <h:link value="Browse Servers" outcome="server-browser"/>
+                <h:link value="Friends" outcome="friends"/>
+                <h:link value="Messages" outcome="dm"/>
+            </nav>
+            <div class="sidebar-user">
+                Logged in as:<br/><b><h:outputText value="#{userLoginBean.userName}"/></b>
+            </div>
+        </aside>
     </h:panelGroup>
 </ui:composition>
