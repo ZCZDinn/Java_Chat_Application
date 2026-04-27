@@ -24,6 +24,10 @@ public class ServerAdmin implements Serializable {
 
     @Inject
     private ServerView serverView;
+
+    @Inject
+    private UserLogin login;
+
     private int selectedUserId = 0;
     private String selectedUserName;
     private List<String> permissions = new LinkedList<>();
@@ -54,6 +58,10 @@ public class ServerAdmin implements Serializable {
         }
     }
 
+    public boolean isOwner() {
+        return login.getUserId() == serverView.getOwnerID();
+    }
+    
     private int findUserIdByUserName() {
         try(PreparedStatement stmt = conn.prepareStatement("SELECT userID FROM users WHERE userName = ?;");){
             stmt.setString(1, getSelectedUserName());
