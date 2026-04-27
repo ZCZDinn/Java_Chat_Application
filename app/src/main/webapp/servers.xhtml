@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en"
+      xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="jakarta.faces.html"
+      xmlns:f="jakarta.faces.core"
+      xmlns:ui="jakarta.faces.facelets">
+    <f:metadata>
+        <f:viewAction action="#{serverManagerBean.loadMyServers}"/>
+    </f:metadata>
+    <h:head>
+        <title>My Servers</title>
+    </h:head>
+    <h:body>
+        <h:panelGroup rendered="#{userLoginBean.token == null}">
+            <p>You must be logged in. <h:link value="Go to Login" outcome="chat"/></p>
+        </h:panelGroup>
+
+        <h:panelGroup id="serversPage" rendered="#{userLoginBean.token != null}">
+            <h1>My Servers</h1>
+
+            <!-- Create Server -->
+            <h2>Create a New Server</h2>
+            <h:form>
+                <h:outputLabel for="srvName" value="Server Name: "/>
+                <h:inputText id="srvName" value="#{serverManagerBean.serverName}" required="true"/>
+                <br/>
+                <h:outputLabel for="srvPublic" value="Public: "/>
+                <h:selectBooleanCheckbox id="srvPublic" value="#{serverManagerBean.publicServer}"/>
+                <br/>
+                <h:commandButton value="Create Server" action="#{serverManagerBean.createServer}">
+                    <f:ajax execute="@form" render=":serversPage"/>
+                </h:commandButton>
+                <h:messages/>
+            </h:form>
+
+            <!-- Status / invite code display -->
+            <h:panelGroup rendered="#{not empty serverManagerBean.statusMessage}">
+                <p><h:outputText value="#{serverManagerBean.statusMessage}"/></p>
+            </h:panelGroup>
+
+            <!-- Join by Invite Code -->
+            <h2>Join a Private Server by Invite Code</h2>
+            <h:form>
+                <h:outputLabel for="invCode" value="Invite Code: "/>
+                <h:inputText id="invCode" value="#{serverManagerBean.inviteCodeInput}" required="true"/>
+                <h:commandButton value="Join" action="#{serverManagerBean.joinByInviteCode}"/>
+                <h:messages/>
+            </h:form>
+
+            <!-- Server List -->
+            <h2>My Servers</h2>
+            <h:form>
+                <h:commandButton value="Refresh" action="#{serverManagerBean.loadMyServers}">
+                    <f:ajax execute="@form" render=":serversPage"/>
+                </h:commandButton>
+            </h:form>
+
+            <h:panelGroup rendered="#{empty serverManagerBean.myServers}">
+                <p>You are not in any servers yet.</p>
+            </h:panelGroup>
+
+            <h:dataTable value="#{serverManagerBean.myServers}" var="srv"
+                         rendered="#{not empty serverManagerBean.myServers}"
+                         border="1">
+                <h:column>
+                    <f:facet name="header">Name</f:facet>
+                    <h:outputText value="#{srv.name}"/>
+                </h:column>
+                <h:column>
+                    <f:facet name="header">Type</f:facet>
+                    <h:outputText value="#{srv.publicServer ? 'Public' : 'Private'}"/>
+                </h:column>
+                <h:column>
+                    <f:facet name="header">Owner</f:facet>
+                    <h:outputText value="#{srv.ownerName}"/>
+                </h:column>
+                <h:column>
+                    <f:facet name="header">Open</f:facet>
+                    <h:form>
+                        <h:commandButton value="Open" action="#{serverManagerBean.openServer(srv.serverId)}"/>
+                    </h:form>
+                </h:column>
+            </h:dataTable>
+
+            <p><h:link value="Browse Public Servers" outcome="server-browser"/></p>
+        </h:panelGroup>
+    </h:body>
+</html>
