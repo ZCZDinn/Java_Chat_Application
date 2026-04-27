@@ -12,7 +12,7 @@
     </h:head>
     <h:body>
         <h:panelGroup rendered="#{userLoginBean.token == null}">
-            <p>You must be logged in. <h:link value="Go to Login" outcome="chat"/></p>
+            <p>You must be logged in. <h:link value="Go to Login" outcome="login"/></p>
         </h:panelGroup>
 
         <h:panelGroup id="browserPage" rendered="#{userLoginBean.token != null}">
