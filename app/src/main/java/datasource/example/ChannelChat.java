@@ -34,6 +34,7 @@ public class ChannelChat implements Serializable {
     private List<Boolean> roleCanWrite = new LinkedList<>();
 
     private int currentChannelId = -1;
+    private int lastServerIdLoaded = -1;
 
     private transient Connection conn;
 
@@ -119,6 +120,19 @@ public class ChannelChat implements Serializable {
 
     public void loadChannels() {
         ensureConnection();
+        
+        int currentServerId = currentContext == null ? 0 : currentContext.getCurrentServerID();
+        
+        // Only clear chat and role permissions if we're switching to a different server
+        if (lastServerIdLoaded != currentServerId) {
+            chatLog.clear();
+            roleIds.clear();
+            roleNames.clear();
+            roleCanRead.clear();
+            roleCanWrite.clear();
+            lastServerIdLoaded = currentServerId;
+        }
+        
         channelIds.clear();
         channelNames.clear();
 
@@ -149,15 +163,17 @@ public class ChannelChat implements Serializable {
         ensureConnection();
         chatLog.clear();
 
-        if (currentChannelId < 0) return;
+        if (currentChannelId < 0 || currentContext.getCurrentServerID() <= 0) return;
 
         try (PreparedStatement stmt = conn.prepareStatement(
                 "SELECT m.messageID, m.userID, u.userName, m.message, m.sentOn, m.imageData, m.imageMimeType " +
                 "FROM messages m " +
                 "JOIN users u ON m.userID = u.userID " +
-                "WHERE m.channelID = ? ORDER BY m.sentOn ASC")) {
+                "JOIN channels c ON m.channelID = c.channelID " +
+                "WHERE m.channelID = ? AND c.serverID = ? ORDER BY m.sentOn ASC")) {
 
             stmt.setInt(1, currentChannelId);
+            stmt.setInt(2, currentContext.getCurrentServerID());
 
             ResultSet rs = stmt.executeQuery();
 
