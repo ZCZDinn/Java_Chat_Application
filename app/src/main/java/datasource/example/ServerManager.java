@@ -89,7 +89,7 @@ public class ServerManager implements Serializable {
         }
     }
 
-    // Req #1, #2 — Creates a public or private server. Owner is auto-joined.
+    // Creates a public or private server. Owner is auto-joined.
     // For private servers, an invite code is auto-generated (UUID).
     public String createServer() {
         ensureConnection();
@@ -191,7 +191,7 @@ public class ServerManager implements Serializable {
         }
     }
 
-    // Req #3 — Loads all public servers for browsing
+    // Loads all public servers for browsing
     public void loadPublicServers() {
         ensureConnection();
         publicServers.clear();
@@ -213,7 +213,7 @@ public class ServerManager implements Serializable {
         }
     }
 
-    // Req #4 — Joins a public server from the browse page; navigates to server.xhtml
+    // Joins a public server from the browse page, navigates to server.xhtml
     public String joinPublicServer(int serverId) {
         ensureConnection();
         int me = login.getUserId();

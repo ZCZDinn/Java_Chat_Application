@@ -22,8 +22,6 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
-// Name this bean "userLoginBean"
-// Make this a SessionScoped bean
 @Named("userLoginBean")
 @SessionScoped
 public class UserLogin implements Serializable{
@@ -44,7 +42,6 @@ public class UserLogin implements Serializable{
     }
 
 
-    // Have this method execute immediately after bean construction using annotations
     @PostConstruct
     public void openConnection(){
         // In a try block
@@ -53,7 +50,7 @@ public class UserLogin implements Serializable{
             token = null;
             // create a new InitialContext
             Context ctx = new InitialContext();
-            // Get the DataSource by lookup with jdbc/Assignment2 under the /comp/env/ in the context
+            // Get the DataSource by lookup with jdbc/FinalJava under the /comp/env/ in the context
             DataSource ds = (DataSource) ctx.lookup("java:/comp/env/jdbc/FinalJava");
             // Use getConnection on the datasource to assign the conn field
             conn = ds.getConnection();
@@ -96,18 +93,15 @@ public class UserLogin implements Serializable{
         ensureConnection();
         // In a try-with-resources block
         try (
-            // Create the following resource:
-            // 1. A PreparedStatement that selects "userID", "token", and "PW_Hash" from the users table, where;
+            // A PreparedStatement that selects "userID", "token", and "PW_Hash" from the users table, where;
             //                                           "username" equals a Parameter Marker
             PreparedStatement stmt = conn.prepareStatement("SELECT userID, token, PW_Hash FROM users WHERE username = ?");
         ) {
-            // In the body
             // set the "username"'s Parameter Marker to userName
             stmt.setString(1, userName);
             // In a try-with-resources block
             try (
-                // Create the following resource:
-                // 1. A ResultSet from executing the PreparedStatement's query
+                // A ResultSet from executing the PreparedStatement's query
                 ResultSet rs = stmt.executeQuery();
             ) {
                 // if rs.next() is true, get the bytes from PW_Hash and call verifyPassword with them; if that is also true
@@ -148,14 +142,12 @@ public class UserLogin implements Serializable{
         ensureConnection();
         // In a try-with-resources resource block
         try (
-            // Create the following resource:
-            // 1. A PreparedStatement that inserts into the users table,
+            // A PreparedStatement that inserts into the users table,
             //                  the columns "username", "PW_Hash" and "token"
             //                  using Parameter Markers for "username" and "PW_Hash" values, and;
             //                  using SHA2(RAND(), 256) for "token"'s value
             PreparedStatement stmt = conn.prepareStatement("INSERT INTO users (username, PW_Hash, token) VALUES (?, ?, SHA2(RAND(), 256))");
         ) {
-            // ensure the following line is inside the try body
             byte[] hash = BCrypt.withDefaults().hash(12, userPassword.getBytes("UTF-16"));
             // set the "username" Parameter marker to userName
             stmt.setString(1, userName);

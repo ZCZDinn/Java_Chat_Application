@@ -171,7 +171,7 @@ a:hover {
     color: #7b3fa0;
 }
 
-/*Status ::-moz-range-progress*/
+/*Status*/
 .status-message,
 p[style*="color: red"] {
     background: #ffe0f0;
