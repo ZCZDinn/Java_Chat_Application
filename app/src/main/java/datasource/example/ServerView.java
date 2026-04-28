@@ -97,7 +97,7 @@ public class ServerView implements Serializable {
         return "server";
     }
 
-    // Req #12 — Loads all members with their server-specific roles (LEFT JOIN so no-role users appear)
+    // Loads all members with their server-specific roles
     public void loadMembers() {
         members.clear();
         if (currentServerId < 0) return;
