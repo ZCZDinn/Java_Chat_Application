@@ -111,8 +111,6 @@ public class RoleManager implements Serializable {
                     insertStmt.setInt(1, getCurrentServerId());
                     insertStmt.setString(2, getNewRole());
                     insertStmt.executeUpdate();
-                    
-                    // Get the new role ID and grant it read/write on all channels in this server
                     try (ResultSet keys = insertStmt.getGeneratedKeys()) {
                         if (keys.next()) {
                             int newRoleId = keys.getInt(1);
@@ -160,8 +158,6 @@ public class RoleManager implements Serializable {
                             insertStmt.setInt(1, userID);
                             insertStmt.setInt(2, getCurrentRoleId());
                             insertStmt.executeUpdate();
-                            
-                            // Delete direct member permissions for all channels in this role's server
                             try(PreparedStatement deletePermsStmt = conn.prepareStatement(
                                 "DELETE FROM channel_member_perms WHERE userID = ? AND channelID IN " +
                                 "(SELECT channelID FROM channels WHERE serverID = (SELECT serverID FROM roles WHERE roleID = ?))"
@@ -201,7 +197,6 @@ public class RoleManager implements Serializable {
                     stmt.setInt(2, getCurrentRoleId());
                     int rolesDeleted = stmt.executeUpdate();
                     if(rolesDeleted > 0) {
-                        // Restore default direct member permissions for all channels in this role's server
                         try(PreparedStatement restorePermsStmt = conn.prepareStatement(
                             "INSERT INTO channel_member_perms (channelID, userID, canRead, canWrite) " +
                             "SELECT c.channelID, ?, true, true FROM channels c " +
