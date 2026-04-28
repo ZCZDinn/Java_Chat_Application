@@ -13,16 +13,6 @@
         <servlet-name>facesServlet</servlet-name>
         <url-pattern>*.xhtml</url-pattern>
     </servlet-mapping>
-    <!-- TODO:
-        Create a resource-ref of type:
-            javax.sql.DataSource
-        with auth set to:
-            Container
-        that references the name:
-            jdbc/Assignment2
-        with a description of:
-            DB Connection
-    -->
     <resource-ref>
         <description>DB Connection</description>
         <res-ref-name>jdbc/FinalJava</res-ref-name>
@@ -33,7 +23,7 @@
         Add a resource for this DataSource to your Tomcat 10.x's context.xml.
         It should look something like:
             <Resource
-                name="jdbc/Assignment2"
+                name="jdbc/FinalJava"
                 auth="Container"
                 type="javax.sql.DataSource"
                 maxTotal="100"
@@ -42,7 +32,7 @@
                 username="root"
                 password="root_password"
                 driverClassName="org.mariadb.jdbc.Driver"
-                url="jdbc:mariadb://localhost:3306/assignment2"
+                url="jdbc:mariadb://localhost:3306/finaljava"
                 />
 
         Use the included db.sql to initialize your database.
